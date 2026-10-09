@@ -1,0 +1,14 @@
+.venv/
+.platformio/
+.pio/
+build.log
+host_tests/lidar_sim/sim.exe
+host_tests/lidar_sim/sim
+host_tests/lidar_sim/Arduino.h
+host_tests/lidar_sim/esp_attr.h
+host_tests/lidar_sim/freertos/
+host_tests/mission_sim/sim_th.exe
+host_tests/mission_sim/sim_th
+.vscode/settings.json
+docs/rules_extracted.txt
+docs/SYROBIX-Rescue-Competition-Rules.pdf
