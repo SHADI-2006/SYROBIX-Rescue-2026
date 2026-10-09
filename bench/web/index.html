@@ -1,0 +1,1782 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SYROBIX Bench</title>
+<style>
+:root{
+  --bg:#0f1216; --panel:#171b21; --panel2:#1e232b; --line:#2a313b; --text:#e6e9ee; --muted:#8b95a3;
+  --ok:#2fbf71; --warn:#e3a72f; --fail:#e5484d; --unk:#5b6573; --acc:#4c8dff; --stop:#d92d2d;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 "Segoe UI",Tahoma,Arial,sans-serif}
+button,select,input{font:inherit;color:inherit}
+button{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
+button:hover{border-color:var(--acc)}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+button.sm{padding:2px 8px;font-size:12px}
+button:disabled{opacity:.45;cursor:not-allowed}
+input[type=number],input[type=text],select{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4px 6px;width:90px}
+input[type=text]{width:220px}
+input[type=range]{width:100%;accent-color:var(--acc);direction:ltr}
+input.num{direction:ltr;font-family:Consolas,"Cascadia Mono",monospace;width:90px}
+.n,.ltr{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;font-family:Consolas,"Cascadia Mono",monospace}
+header{position:sticky;top:0;z-index:20;background:#0b0e12;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;padding:8px 14px;flex-wrap:wrap}
+header h1{font-size:16px;margin:0 0 0 8px;white-space:nowrap}
+.pill{border-radius:999px;padding:2px 10px;font-size:12px;border:1px solid var(--line);background:var(--panel)}
+.pill.ok{border-color:var(--ok);color:var(--ok)} .pill.warn{border-color:var(--warn);color:var(--warn)} .pill.fail{border-color:var(--fail);color:var(--fail)}
+#stopBtn{margin-inline-start:auto;background:var(--stop);border:0;color:#fff;font-weight:800;font-size:20px;padding:10px 28px;border-radius:10px;box-shadow:0 0 0 3px #d92d2d55;letter-spacing:1px}
+#stopBtn:active{transform:scale(.97)}
+nav{display:flex;gap:4px;padding:8px 14px;flex-wrap:wrap;border-bottom:1px solid var(--line);background:var(--panel)}
+nav button{background:transparent;border-color:transparent}
+nav button.on{background:var(--panel2);border-color:var(--acc)}
+main{padding:14px;max-width:1400px;margin:0 auto}
+.tab{display:none}.tab.on{display:block}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.card h3{margin:0 0 8px;font-size:15px;display:flex;gap:8px;align-items:center}
+.card h4{margin:12px 0 6px;font-size:13px;color:var(--muted)}
+.id{font-family:Consolas,monospace;font-weight:700;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:0 6px;direction:ltr}
+.badge{font-size:11px;font-weight:700;border-radius:999px;padding:1px 8px;color:#0b0e12;background:var(--unk)}
+.badge.ok{background:var(--ok)} .badge.warn{background:var(--warn)} .badge.fail{background:var(--fail);color:#fff} .badge.unk{background:var(--unk);color:#fff}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.muted{color:var(--muted);font-size:12px}
+.big{font-size:30px;font-weight:700}
+table{border-collapse:collapse;width:100%}
+td,th{border-bottom:1px solid var(--line);padding:3px 6px;text-align:start;font-size:13px}
+th{color:var(--muted);font-weight:600}
+.tiles{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.tile{background:var(--panel);border:1px solid var(--line);border-inline-start:5px solid var(--unk);border-radius:10px;padding:8px 10px;cursor:pointer;min-height:70px}
+.tile.ok{border-inline-start-color:var(--ok)} .tile.warn{border-inline-start-color:var(--warn)} .tile.fail{border-inline-start-color:var(--fail)}
+.tile .note{font-size:12px;color:var(--muted);margin-top:2px}
+.bars{display:flex;gap:6px;align-items:flex-end;height:180px;direction:ltr;padding:4px 0}
+.bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;height:100%}
+.bar .col{flex:1;width:100%;background:var(--panel2);border-radius:6px;position:relative;overflow:hidden;border:1px solid var(--line)}
+.bar .fill{position:absolute;bottom:0;left:0;right:0;background:var(--acc)}
+.bar .mark{position:absolute;left:0;right:0;height:2px}
+.bar .lab{font-size:11px}
+.posbar{position:relative;height:26px;background:var(--panel2);border-radius:6px;border:1px solid var(--line);direction:ltr}
+.posbar .dot{position:absolute;top:2px;width:20px;height:20px;border-radius:50%;background:var(--warn);transform:translateX(-50%)}
+.posbar .mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--muted)}
+.hbar{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden;direction:ltr}
+.hbar>div{height:100%;background:var(--acc)}
+canvas{width:100%;height:90px;background:var(--bg);border:1px solid var(--line);border-radius:6px;display:block}
+textarea{width:100%;min-height:340px;background:#0b0e12;color:#cfe3ff;border:1px solid var(--line);border-radius:8px;padding:10px;font:12.5px/1.5 Consolas,monospace;direction:ltr}
+#log{height:300px;overflow:auto;background:#0b0e12;border:1px solid var(--line);border-radius:8px;padding:8px;font:12px/1.45 Consolas,monospace;direction:ltr;white-space:pre-wrap}
+.warnbox{border:1px solid var(--warn);background:#e3a72f14;border-radius:8px;padding:8px 10px;font-size:13px;margin:8px 0}
+.failbox{border:1px solid var(--fail);background:#e5484d14;border-radius:8px;padding:8px 10px;font-size:13px;margin:8px 0}
+.okbox{border:1px solid var(--ok);background:#2fbf7114;border-radius:8px;padding:8px 10px;font-size:13px;margin:8px 0}
+#toast{position:fixed;bottom:16px;left:16px;z-index:50;display:flex;flex-direction:column;gap:6px;max-width:420px}
+#toast div{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;box-shadow:0 4px 16px #0008}
+#mockPanel{position:fixed;bottom:16px;right:16px;z-index:40;background:#1a1530;border:1px solid #7a5cff;border-radius:12px;padding:10px 12px;width:290px;display:none}
+#mockPanel h3{margin:0 0 6px;font-size:13px;color:#b9a6ff}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;max-width:520px}
+dialog::backdrop{background:#000a}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:13px}
+.kv .k{color:var(--muted)}
+@media (max-width:700px){#stopBtn{width:100%;margin:0}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>SYROBIX — أداة فحص العتاد</h1>
+  <button id="connBtn" class="pri" title="USB (Web Serial)">🔌 USB</button>
+  <button id="wifiBtn" class="pri" title="Wi-Fi: بس مع برنامج bench_wifi">📶 Wi-Fi</button>
+  <input type="text" id="wifiHost" class="ltr" style="width:120px" title="عنوان الروبوت (192.168.4.1 بشبكة الروبوت)">
+  <span id="modePill" class="pill" style="display:none"></span>
+  <span id="connPill" class="pill">غير متصل</span>
+  <span id="ratePill" class="pill n">0 Hz</span>
+  <span id="mockPill" class="pill warn" style="display:none">وضع تجريبي (mock)</span>
+  <span class="pill">سقف PWM: <b id="capTxt" class="n">40%</b>
+    <select id="capSel" style="width:auto;margin-inline-start:4px">
+      <option value="20">20%</option><option value="30">30%</option><option value="40" selected>40%</option>
+      <option value="60">60%</option><option value="80">80%</option><option value="100">100%</option>
+    </select></span>
+  <button id="stopBtn" title="Space">STOP ⏹</button>
+</header>
+<nav id="nav"></nav>
+<main>
+
+<!-- ============ OVERVIEW ============ -->
+<section class="tab" id="tab-ov">
+  <div class="tiles" id="tiles"></div>
+  <div class="grid" style="margin-top:12px">
+    <div class="card"><h3>تقرير الإقلاع و I2C</h3>
+      <div id="bootInfo" class="muted">اتصل بالروبوت (أو افتح الصفحة مع <span class="n">?mock</span>).</div>
+      <div class="row"><button id="scanBtn">I2C SCAN</button><button id="helloBtn">HELLO</button></div>
+      <table id="i2cTbl"></table>
+    </div>
+    <div class="card"><h3>ترتيب الفحص</h3>
+      <div id="stages"></div>
+      <div class="muted">العلامات بتنحفظ بالمتصفح.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ IMU ============ -->
+<section class="tab" id="tab-imu">
+  <div class="grid">
+    <div class="card"><h3><span class="id">G1</span> IMU — هوية الشريحة <span id="g1b" class="badge unk">?</span></h3>
+      <div class="row"><span>WHO_AM_I =</span><span class="big n" id="g1who">—</span></div>
+      <div id="g1whoTxt" class="muted"></div>
+      <div id="g1flags"></div>
+      <div class="row"><button id="imuInit">IMU INIT</button></div>
+    </div>
+    <div class="card"><h3>اختبار الثبات (3 ثواني)</h3>
+      <div class="muted">حط الروبوت على طاولة ثابتة وما تلمسه، الموتورات طافية.</div>
+      <div class="row"><button class="pri" id="stillBtn">ابدأ 3 ث</button><span id="stillState" class="muted"></span></div>
+      <div id="stillRes"></div>
+      <details class="muted"><summary>معيار الحكم</summary>
+        <div>حسب datasheet الـ MPU6500 مع فلتر 41 Hz اللي بيستخدمه الـ firmware:
+        ضجيج الجيرو المتوقع حوالي 0.08 °/s. <b>OK</b> إذا std ≤ 0.15 °/s، <b>مشبوه</b> حتى 0.3، وفوق هيك <b>فشل</b>.
+        انحراف الصفر (bias) المسموح بالـ datasheet ±5 °/s. فوقه <b>مشبوه</b>.
+        مقدار التسارع لازم يكون قريب من 1 g (0.9 إلى 1.1)، وضجيجه ≤ 0.01 g.
+        أي قراءة متجمّدة خلال الاختبار = <b>فشل</b>.</div></details>
+    </div>
+    <div class="card"><h3>Yaw المتراكم و IMU_YAW_SIGN</h3>
+      <div class="row"><span class="big n" id="yawTxt">0.0°</span><button id="yawZero">تصفير</button></div>
+      <div class="muted">الإشارة هون <b>خام</b> (بدون IMU_YAW_SIGN). اختبار: صفّر، لف الروبوت بإيدك <b>لليسار</b> (عكس عقارب الساعة من فوق) لفة معروفة، واضغط "خلصت".</div>
+      <div class="row">الهدف:
+        <select id="yawTarget" style="width:auto"><option value="90">90°</option><option value="180">180°</option><option value="360">360°</option></select>
+        <button id="yawStart">ابدأ (صفّر)</button><button class="pri" id="yawDone">خلصت لفة يسار</button></div>
+      <div id="yawRes"></div>
+      <canvas id="cvYaw" width="600" height="90"></canvas>
+    </div>
+    <div class="card"><h3>قراءات حيّة</h3>
+      <table>
+        <tr><th></th><th class="n">X</th><th class="n">Y</th><th class="n">Z</th></tr>
+        <tr><td>gyro °/s</td><td class="n" id="gx">—</td><td class="n" id="gy">—</td><td class="n" id="gz">—</td></tr>
+        <tr><td>accel g</td><td class="n" id="ax">—</td><td class="n" id="ay">—</td><td class="n" id="az">—</td></tr>
+      </table>
+      <div class="kv" style="margin-top:8px">
+        <span class="k">roll</span><span class="n" id="roll">—</span>
+        <span class="k">pitch</span><span class="n" id="pitch">—</span>
+        <span class="k">|a|</span><span class="n" id="anorm">—</span>
+        <span class="k">حرارة الشريحة</span><span class="n" id="tC">—</span>
+        <span class="k">أخطاء قراءة</span><span class="n" id="gerr">—</span>
+      </div>
+      <canvas id="cvGz" width="600" height="90" style="margin-top:8px"></canvas>
+      <div class="muted">gyro Z (°/s) آخر 10 ثواني</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TOF ============ -->
+<section class="tab" id="tab-tof">
+  <div class="row"><button id="tofInit">TOF INIT (إعادة تعيين العناوين)</button><span class="muted">الحساسات: T1=0x30 أمامي، T2=0x31 يسار، T3=0x32 يمين. القيم هون <b>خام</b> بدون OFFSET_MM.</span></div>
+  <div class="grid" id="tofCards"></div>
+</section>
+
+<!-- ============ LINE ============ -->
+<section class="tab" id="tab-line">
+  <div class="card">
+    <h3><span class="id">L0..L7</span> حساسات الخط (خام 0..4095) <span id="lineBadge" class="badge unk">?</span></h3>
+    <div class="bars" id="lineBars"></div>
+    <div class="muted">L0..L5 = الصف الأمامي (L0 أقصى اليسار). L6/L7 = الزوج الخلفي. الخط الأخضر = أبيض ملتقط، الأحمر = أسود ملتقط.</div>
+    <div class="row">
+      <button id="capWhite">التقاط أبيض (1 ث)</button>
+      <button id="capBlack">التقاط أسود (1 ث)</button>
+      <button id="sweepBtn">مسح min/max: إيقاف</button>
+      <button id="lineClear" class="sm">مسح المعايرة</button>
+    </div>
+    <table id="lineTbl" style="direction:ltr"></table>
+    <div id="linePol"></div>
+    <h4>موقع الخط (الصف الأمامي فقط، نفس خوارزمية LineArray)</h4>
+    <div class="posbar"><div class="mid"></div><div class="dot" id="posDot" style="left:50%"></div></div>
+    <div class="row"><span>الموقع: <b class="n" id="posTxt">—</b></span><span class="muted" id="posInfo"></span></div>
+  </div>
+</section>
+
+<!-- ============ MOTORS ============ -->
+<section class="tab" id="tab-mot">
+  <div class="warnbox">قبل هالتبويب: الدواليب <b>بالهوا</b> (الروبوت على قاعدة) وبطارية الموتورات موصولة. أي أمر موتور بيعيش 400 ms بس، والصفحة بتجدّده. سكّر التبويب أو افصل الكيبل = وقوف.</div>
+  <div class="grid">
+    <div class="card"><h3><span class="id">M1</span> موتور يسار <span id="m1b" class="badge unk">?</span> &nbsp; <span class="id">M2</span> موتور يمين <span id="m2b" class="badge unk">?</span></h3>
+      <div class="muted">المنزلق: يسار = لورا، نص = وقوف، يمين = لقدام.</div>
+      <div class="row">يسار (fw): <b class="n" id="mlv">0</b></div>
+      <input type="range" id="mL" min="-409" max="409" value="0" step="1">
+      <div class="row">يمين (fw): <b class="n" id="mrv">0</b></div>
+      <input type="range" id="mR" min="-409" max="409" value="0" step="1">
+      <div class="row"><label><input type="checkbox" id="mLink"> اربط الجهتين</label><button id="mZero">صفر</button></div>
+      <div class="kv"><span class="k">على الدبابيس (raw)</span><span class="n" id="mRaw">—</span>
+        <span class="k">STBY</span><span class="n" id="mStby">—</span><span class="k">تسلسل شغّال</span><span class="n" id="mSeq">—</span></div>
+      <div class="muted">الإشارة "fw" = اتجاه الـ firmware (هو بيقلب جهة اليمين بـ RobotDrivetrain.cpp). ما في stiction floor هون.</div>
+    </div>
+    <div class="card"><h3><span class="id">E1</span>/<span class="id">E2</span> Encoders <span id="e1b" class="badge unk">?</span><span id="e2b" class="badge unk">?</span></h3>
+      <table><tr><th></th><th>يسار E1</th><th>يمين E2</th></tr>
+        <tr><td>عدّ fw</td><td class="n big" id="eL">0</td><td class="n big" id="eR">0</td></tr>
+        <tr><td>عدّ خام</td><td class="n" id="eLr">0</td><td class="n" id="eRr">0</td></tr>
+        <tr><td>مم (Config)</td><td class="n" id="eLmm">0</td><td class="n" id="eRmm">0</td></tr>
+        <tr><td>انتقالات غلط</td><td class="n" id="eLb">0</td><td class="n" id="eRb">0</td></tr></table>
+      <div class="row"><button id="encReset">Reset</button></div>
+    </div>
+    <div class="card"><h3>اختبار الاتجاه (نبضة 500 ms)</h3>
+      <div class="muted">بيعطي جهة وحدة نبضة "لقدام" حسب الـ firmware بقوة منخفضة. راقب الدولابين بنفس الجهة، وبعدها جاوب.</div>
+      <div class="row"><button class="pri" id="dirL">نبضة يسار</button><button class="pri" id="dirR">نبضة يمين</button>
+        PWM <input type="number" id="dirPwm" value="280" min="50" max="1023"></div>
+      <div id="dirRes"></div>
+    </div>
+    <div class="card"><h3>لاقط الـ deadband (PWM_MIN_MOVE)</h3>
+      <div class="muted">بيرفع PWM من 0 بخطوات 8 لحد ما الـ encoder يتحرك 10 عدّات. القيمة الحقيقية لـ PWM_MIN_MOVE لازم تنقاس <b>عالأرض</b> بوضع pivot (المرحلة د).</div>
+      <div class="row">السطح: <select id="dbSurf" style="width:auto"><option value="air">بالهوا</option><option value="ground">عالأرض (البلاطة)</option></select>
+        <select id="dbDir" style="width:auto"><option value="+">لقدام</option><option value="-">لورا</option></select></div>
+      <div class="row"><button id="dbL">يسار</button><button id="dbR">يمين</button><button id="dbP">pivot يسار</button></div>
+      <table id="dbTbl"></table>
+      <div id="dbSug"></div>
+    </div>
+    <div class="card"><h3>مساعد قياس ENCODER_CPR و القطر و TRACK_WIDTH</h3>
+      <h4>1) ENCODER_CPR</h4>
+      <div class="muted">اضغط Reset فوق، لف دولاب (بإيدك، STBY طافي) عدد لفات كامل بالضبط وعلّم عليه بشريطة.</div>
+      <div class="row">عدد اللفات <input type="number" id="cprTurns" value="10" min="1"> <select id="cprSide" style="width:auto"><option value="0">يسار</option><option value="1">يمين</option></select><button id="cprCalc">احسب</button></div>
+      <div id="cprRes"></div>
+      <h4>2) قطر الدولاب (بالدفش)</h4>
+      <div class="muted">علّم نقطة عالأرض، اضغط "بداية"، ادفش الروبوت بإيدك لقدام بخط مستقيم مسافة مقاسة بالمتر، اضغط "نهاية".</div>
+      <div class="row">المسافة mm <input type="number" id="distMm" value="1000"><button id="distStart">بداية</button><button id="distEnd">نهاية</button></div>
+      <div id="distRes"></div>
+      <h4>3) TRACK_WIDTH الفعلي (encoders + IMU)</h4>
+      <div class="muted">عالأرض: "بداية"، لف الروبوت مكانه (pivot) بالموتورات أو بإيدك لفة أو أكتر، "نهاية". بيحتاج IMU شغّال.</div>
+      <div class="row"><button id="twStart">بداية</button><button id="twEnd">نهاية</button></div>
+      <div id="twRes"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SERVOS ============ -->
+<section class="tab" id="tab-srv">
+  <div class="warnbox">لازم يكون الـ UBEC موصول على طرف <b>V+</b> للـ PCA9685. أول تشغيل للسيرفو بيقفز للزاوية اللي بتكتبها (الموضع الحقيقي مجهول)، فاختار زاوية قريبة من وضعه الحالي.</div>
+  <div class="grid" id="srvCards"></div>
+  <div class="card" style="margin-top:12px"><h3>معايرة PCA_OSC_HZ (بجهاز قياس)</h3>
+    <div class="muted">شغّل سيرفو على زاوية، قيس عرض النبضة على قناته بـ oscilloscope أو logic analyser، واكتب الرقم.</div>
+    <div class="row">السيرفو <select id="oscSv" style="width:auto"><option value="0">S1</option><option value="1">S2</option></select>
+      النبضة المقاسة µs <input type="number" id="oscUs" step="0.1"><button id="oscCalc">احسب</button></div>
+    <div id="oscRes"></div>
+  </div>
+</section>
+
+<!-- ============ PCA / LED / BUZZER ============ -->
+<section class="tab" id="tab-pca">
+  <div class="grid">
+    <div class="card"><h3><span class="id">P1</span> PCA9685 <span id="p1b" class="badge unk">?</span></h3>
+      <div class="kv" id="pcaKv"></div>
+      <div class="row"><button id="pcaStat">PCA STAT</button><button id="pcaInit">PCA INIT</button></div>
+      <div class="row">جرّب osc <input type="number" id="pcaOsc" value="27000000" style="width:120px"><button id="pcaOscBtn">PCA OSC</button></div>
+    </div>
+    <div class="card"><h3><span class="id">D1</span> LED الحالة <span id="d1b" class="badge unk">?</span></h3>
+      <div class="row"><button id="ledOn">تشغيل</button><button id="ledOff">إطفاء</button><span>الحالة: <b id="ledSt">—</b></span></div>
+      <div class="row">شفته يضوي؟ <button class="sm" data-man="D1" data-v="ok">إي ✓</button><button class="sm" data-man="D1" data-v="fail">لا ✗</button></div>
+    </div>
+    <div class="card"><h3><span class="id">B1</span> البزّر <span id="b1b" class="badge unk">?</span></h3>
+      <div class="row">المدة ms <input type="number" id="beepMs" value="300" min="1" max="3000"><button class="pri" id="beepBtn">بيب</button><button id="buzOff">إطفاء</button></div>
+      <div class="row">سمعته؟ <button class="sm" data-man="B1" data-v="ok">إي ✓</button><button class="sm" data-man="B1" data-v="fail">لا ✗</button></div>
+      <div class="muted">إذا ما سمعت شي: البزّر النشط بده transistor (القناة 3 بتعطي ~10 mA بس). شوف تحذير CLAUDE.md.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COLOUR ============ -->
+<section class="tab" id="tab-col">
+  <div class="card"><h3><span class="id">C1</span> لون يسار <span id="c1b" class="badge unk">?</span> &nbsp; <span class="id">C2</span> لون يمين <span id="c2b" class="badge unk">?</span></h3>
+    <div class="row">الرأس:
+      <label><input type="radio" name="colSel" value="B" checked> الاثنين</label>
+      <label><input type="radio" name="colSel" value="L"> C1 بس</label>
+      <label><input type="radio" name="colSel" value="R"> C2 بس</label>
+      <label><input type="radio" name="colSel" value="OFF"> إيقاف</label></div>
+    <table id="colTbl"></table>
+    <div class="muted">الرقم = 500000 ÷ نصف الدور (µs)، نفس ColorVision. أكبر = أسطع. 0 = ما في نبض (timeout).
+      النسب r/c و g/c و b/c بتساعدك تميّز الألوان بغض النظر عن الإضاءة.</div>
+  </div>
+</section>
+
+<!-- ============ BUTTON ============ -->
+<section class="tab" id="tab-btn">
+  <div class="card" style="max-width:520px"><h3><span class="id">BTN</span> زر START <span id="btnb" class="badge unk">?</span></h3>
+    <div class="big" id="btnSt">—</div>
+    <div>عدد الضغطات: <b class="n" id="btnN">0</b></div>
+    <div class="muted">GPIO0 = نفس زر BOOT. لا تضغطه وقت الـ reset أو الرفع.
+      اختبار ذاتي بدون لابتوب: افصل الكيبل، شغّل الروبوت، اضغط START. بيعدّ 5 ثواني مع بيب، بعدين بيحرّك الموتورات شوي ويوقف. أي ضغطة تانية بتوقفه.</div>
+  </div>
+</section>
+
+<!-- ============ CONFIG ============ -->
+<section class="tab" id="tab-cfg">
+  <div class="grid">
+    <div class="card" style="grid-column:1/-1"><h3>قيم جاهزة لـ Config.h</h3>
+      <div class="muted">هون بس الأرقام اللي قستها فعلاً. انسخ كل سطر مكان السطر المقابل بـ src/Config.h. اللي ما انقاس بيضل كتعليق.</div>
+      <textarea id="cfgOut" readonly></textarea>
+      <div class="row"><button class="pri" id="cfgCopy">نسخ</button><button id="cfgClear">مسح كل القياسات</button></div>
+    </div>
+    <div class="card"><h3>قياسات بالمسطرة (اكتبها هون)</h3>
+      <div class="kv">
+        <span class="k">LINE_ARRAY_TO_PIVOT_MM</span><input type="number" step="0.5" data-ruler="LINE_ARRAY_TO_PIVOT_MM">
+        <span class="k">COLOR_HEADS_TO_CENTER_MM</span><input type="number" step="0.5" data-ruler="COLOR_HEADS_TO_CENTER_MM">
+        <span class="k">COLOR_HEADS_BEHIND_ARRAY_MM</span><input type="number" step="0.5" data-ruler="COLOR_HEADS_BEHIND_ARRAY_MM">
+      </div>
+      <div class="muted">الشرح الكامل لكل وحدة بالتعليقات فوقها بـ Config.h.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRACTICE RUN (Wi-Fi build) ============ -->
+<section class="tab" id="tab-run">
+  <div id="runBench">
+    <div class="grid">
+      <div class="card"><h3>🏁 تشغيل تجريبي — كأنه بالمسابقة</h3>
+        <div>الكبسة بتعيد تشغيل الروبوت على <b>كود المسابقة الحقيقي</b> (src/)، ومن هون بتقدر تعمل START وSTOP وتشوف شو عم يعمل مباشرة.</div>
+        <div class="failbox"><b>للتمرين بس.</b> القوانين (4.1) بتمنع أي اتصال لاسلكي بالروبوت وقت الجولة. يوم المسابقة ارفع البرنامج العادي: <span class="n">pio run -t upload</span>.</div>
+        <div class="muted">قبل ما تضغط: بطارية الموتورات موصولة، الـ UBEC موصول، والروبوت على بلاطة البداية بملعب تجريبي.</div>
+        <div class="row"><button class="pri" id="runGo" style="font-size:18px;padding:10px 22px">🏁 ابدأ تشغيل تجريبي</button></div>
+        <div id="runGoNote" class="muted"></div>
+        <div class="muted">مرة وحدة: أي reset أو فصل كهربا بيرجّع الروبوت لوضع الفحص.</div>
+      </div>
+    </div>
+  </div>
+  <div id="runLive" style="display:none">
+    <div class="grid">
+      <div class="card"><h3>الحالة</h3>
+        <div class="big ltr" id="rnName">—</div>
+        <div id="rnDesc"></div>
+        <div class="kv" style="margin-top:8px">
+          <span class="k">بالحالة من</span><span class="n" id="rnIn">—</span>
+          <span class="k">وقت الجولة</span><span class="n big" id="rnMatch">—</span>
+          <span class="k">الحالة السابقة</span><span class="n" id="rnPrev">—</span>
+        </div>
+        <div id="rnFault"></div>
+      </div>
+      <div class="card"><h3>التحكم</h3>
+        <div class="row"><button class="pri" id="rnStart" style="font-size:20px;padding:12px 26px;background:var(--ok);border-color:var(--ok)">▶ START</button>
+          <span class="muted">نفس ضغطة زر START الحقيقي</span></div>
+        <div class="row"><label><input type="checkbox" id="rnLink" checked> وقّف الروبوت إذا انقطع الواي فاي أكتر من <span class="n" id="rnLinkMs">1500</span> ms</label></div>
+        <div class="row"><button id="rnAgain">🔁 إعادة التجربة</button><button id="rnBack">↩ رجوع لوضع الفحص</button></div>
+        <div class="muted">STOP الأحمر فوق (أو Space) = emergencyStop. بعده لازم "إعادة التجربة".</div>
+      </div>
+      <div class="card"><h3>النقاط والمهمة</h3>
+        <div class="kv">
+          <span class="k">نقاط تقديرية</span><span class="n big" id="rnScore">—</span>
+          <span class="k">دخل منطقة المهمة</span><span id="rnZone">—</span>
+          <span class="k">ألغام مفكّكة</span><span class="n" id="rnMines">—</span>
+          <span class="k">الضحية</span><span id="rnVic">—</span>
+          <span class="k">محاولات الضحية</span><span class="n" id="rnAtt">—</span>
+          <span class="k">عدم تقدم</span><span class="n" id="rnLop">—</span>
+        </div>
+      </div>
+      <div class="card"><h3>الحساسات (من كود المسابقة)</h3>
+        <div class="kv">
+          <span class="k">موقع الخط</span><span class="n" id="rnLine">—</span>
+          <span class="k">yaw / pitch</span><span class="n" id="rnYaw">—</span>
+          <span class="k">ToF أمام/يسار/يمين</span><span class="n" id="rnTof">—</span>
+          <span class="k">لون يسار/يمين</span><span id="rnCol">—</span>
+          <span class="k">IMU / منحدر</span><span id="rnImu">—</span>
+          <span class="k">زر START</span><span id="rnBtn">—</span>
+        </div>
+      </div>
+      <div class="card" style="grid-column:1/-1"><h3>سجل الحالات</h3><div id="rnHist" class="ltr" style="font:12px Consolas,monospace;max-height:200px;overflow:auto"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LOG ============ -->
+<section class="tab" id="tab-log">
+  <div class="card">
+    <h3>سجل وتسجيل CSV</h3>
+    <div class="row"><button id="recBtn">ابدأ التسجيل</button><button id="csvBtn">تنزيل CSV</button><span class="muted" id="recInfo">0 سطر</span></div>
+    <div class="row"><input type="text" id="rawCmd" placeholder="أمر يدوي، مثال: I2C SCAN"><button id="rawSend">إرسال</button>
+      <span class="muted">(Space هون بيكتب مسافة. برّا هالخانة Space = STOP)</span></div>
+    <div id="log"></div>
+  </div>
+</section>
+</main>
+
+<div id="mockPanel">
+  <h3>لوحة المحاكاة (mock)</h3>
+  <div class="row"><button class="sm" id="mkRotL">لفّ 90° يسار</button><button class="sm" id="mkRotR">لفّ 90° يمين</button></div>
+  <div class="row"><button class="sm" id="mkBtn">اضغط START</button><button class="sm" id="mkPush">ادفش 1000 mm</button></div>
+  <div>موقع الخط <input type="range" id="mkLine" min="-100" max="100" value="0"></div>
+  <div>الأرضية <select id="mkFloor" style="width:auto"><option value="line">خط أسود</option><option value="white">أبيض كله</option><option value="black">أسود كله</option></select></div>
+  <div>حيط أمامي mm <input type="number" id="mkWall" value="150"></div>
+  <div>عطل وهمي <select id="mkFault" style="width:auto">
+    <option value="">بدون</option><option value="encR">E2 مقلوب</option><option value="swapMot">موتورات مبدّلة</option>
+    <option value="tofL">T2 ميّت</option><option value="imuFrozen">IMU متجمّد</option><option value="imuUpside">IMU مقلوب</option>
+    <option value="line3">L3 ميّت</option><option value="colR">C2 ميّت</option><option value="pcaBrown">PCA brown-out</option></select></div>
+</div>
+<div id="toast"></div>
+<dialog id="dlg"><div id="dlgBody"></div><div class="row" id="dlgBtns" style="justify-content:flex-end"></div></dialog>
+
+<script>
+"use strict";
+// ============================================================================
+//  Utilities
+// ============================================================================
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => Array.from(document.querySelectorAll(s));
+const fmt = (v, d = 1) => (v === null || v === undefined || !isFinite(v)) ? "—" : Number(v).toFixed(d);
+const hex = (v) => "0x" + (v >>> 0).toString(16).toUpperCase().padStart(2, "0");
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const today = () => new Date().toISOString().slice(0, 10);
+function store(k, v) { try { localStorage.setItem("syrobix-bench:" + k, JSON.stringify(v)); } catch (e) {} }
+function load(k, d) { try { const s = localStorage.getItem("syrobix-bench:" + k); return s ? JSON.parse(s) : d; } catch (e) { return d; } }
+function toast(msg, ms = 3500) {
+  const d = document.createElement("div"); d.textContent = msg; $("#toast").appendChild(d);
+  setTimeout(() => d.remove(), ms);
+}
+function logLine(dir, txt) {
+  const el = $("#log"); const line = document.createElement("div");
+  line.textContent = (dir === ">" ? "> " : "< ") + txt;
+  if (dir === ">") line.style.color = "#8fb8ff";
+  el.appendChild(line);
+  while (el.childNodes.length > 300) el.removeChild(el.firstChild);
+  el.scrollTop = el.scrollHeight;
+}
+function ask(html, buttons) {   // -> Promise<value>
+  return new Promise((res) => {
+    $("#dlgBody").innerHTML = html;
+    const box = $("#dlgBtns"); box.innerHTML = "";
+    for (const [label, value, cls] of buttons) {
+      const b = document.createElement("button"); b.textContent = label; if (cls) b.className = cls;
+      b.onclick = () => { $("#dlg").close(); res(value); }; box.appendChild(b);
+    }
+    $("#dlg").showModal();
+  });
+}
+
+// ============================================================================
+//  State
+// ============================================================================
+const ELEMENTS = [
+  ["G1", "IMU", "imu"], ["T1", "ToF أمامي", "tof"], ["T2", "ToF يسار", "tof"], ["T3", "ToF يمين", "tof"],
+  ["L0", "خط 0", "line"], ["L1", "خط 1", "line"], ["L2", "خط 2", "line"], ["L3", "خط 3", "line"],
+  ["L4", "خط 4", "line"], ["L5", "خط 5", "line"], ["L6", "خط خلفي يسار", "line"], ["L7", "خط خلفي يمين", "line"],
+  ["C1", "لون يسار", "col"], ["C2", "لون يمين", "col"], ["BTN", "زر START", "btn"],
+  ["M1", "موتور يسار", "mot"], ["M2", "موتور يمين", "mot"], ["E1", "encoder يسار", "mot"], ["E2", "encoder يمين", "mot"],
+  ["P1", "PCA9685", "pca"], ["D1", "LED الحالة", "pca"], ["B1", "البزّر", "pca"],
+  ["S1", "سيرفو الذراع", "srv"], ["S2", "سيرفو القبضة", "srv"],
+];
+const TABS = [["ov", "نظرة عامة"], ["run", "🏁 تشغيل تجريبي"], ["imu", "G1 IMU"], ["tof", "T1–T3 ToF"], ["line", "L0–L7 خط"], ["mot", "M/E موتورات"],
+  ["srv", "S1/S2 سيرفو"], ["pca", "P1/D1/B1"], ["col", "C1/C2 لون"], ["btn", "BTN"], ["cfg", "Config.h"], ["log", "سجل"]];
+const STAGES = [
+  ["a", "آ) USB فقط بدون بطارية: G1، T1–T3، L0–L7، C1/C2، BTN، P1"],
+  ["b", "ب) بطارية الموتورات والدواليب بالهوا: M1/M2، E1/E2، CPR"],
+  ["c", "ج) UBEC موصول: S1/S2، D1، B1"],
+  ["d", "د) عالأرض آخراً: deadband pivot، القطر، TRACK_WIDTH، محاذاة ToF"],
+];
+
+const S = {
+  link: null, mock: false, hello: null, tl: null, lastTlAt: 0, tlCount: 0, rate: 0,
+  V: {},                                 // live verdicts {id:{s,n}}
+  man: load("manual", {}),               // manual marks {id:'ok'|'fail'}
+  meas: load("meas", {}),                // measured values for Config.h
+  poses: load("poses", {}),
+  line: load("line", { white: null, black: null, min: null, max: null }),
+  stages: load("stages", {}),
+  sweep: false, capturing: null,
+  imuStill: null, dirRes: load("dirRes", {}), dbRes: load("dbRes", []),
+  tofStat: {}, tofTrue: load("tofTrue", [100, 100, 100]), tilt: [null, null, null],
+  rec: { on: false, rows: [] },
+  hist: { gz: [], yaw: [], tof: [[], [], []] },
+  posLast: 0, yawTest: null, dist0: null, tw0: null,
+};
+
+// ============================================================================
+//  Transport: Web Serial
+// ============================================================================
+// ============================================================================
+//  Transport: Wi-Fi WebSocket (bench_wifi firmware). Same text protocol.
+//  Reconnects on its own, so a reboot into/out of RUN mode needs no click.
+// ============================================================================
+class WsLink {
+  constructor(onLine, onClose, host) { this.onLine = onLine; this.onClose = onClose; this.host = host; this.wantOpen = true; this.isWifi = true; }
+  open() { return new Promise((res, rej) => this.dial(res, rej)); }
+  dial(res, rej) {
+    let opened = false;
+    const ws = new WebSocket(`ws://${this.host}:81/`);
+    this.ws = ws;
+    const timer = setTimeout(() => { if (!opened) ws.close(); }, 4000);
+    ws.onopen = () => {
+      opened = true; clearTimeout(timer); this.alive = true;
+      if (res) res(); else setPill("#connPill", "متصل (Wi-Fi)", "ok");
+      this.send("HELLO"); this.send("TELE 100");
+    };
+    ws.onmessage = (e) => String(e.data).split("\n").forEach(l => { if (l) this.onLine(l); });
+    ws.onclose = () => {
+      clearTimeout(timer); this.alive = false;
+      if (!opened && rej) { rej(new Error("no answer from " + this.host)); return; }
+      if (this.wantOpen) { setPill("#connPill", "عم يعيد الاتصال…", "warn"); setTimeout(() => this.wantOpen && this.dial(), 1500); }
+      else this.onClose();
+    };
+    ws.onerror = () => {};
+  }
+  send(line) { if (this.ws && this.ws.readyState === 1) this.ws.send(line); }
+  async close() { this.wantOpen = false; try { this.ws.close(); } catch (e) {} if (!this.alive) this.onClose(); }
+}
+
+class SerialLink {
+  constructor(onLine, onClose) { this.onLine = onLine; this.onClose = onClose; this.q = Promise.resolve(); }
+  async open() {
+    this.port = await navigator.serial.requestPort();
+    await this.port.open({ baudRate: 460800, bufferSize: 65536 });
+    // DTR/RTS released: on DevKitC auto-reset wiring this keeps EN and IO0 (START) high.
+    try { await this.port.setSignals({ dataTerminalReady: false, requestToSend: false }); } catch (e) {}
+    this.writer = this.port.writable.getWriter();
+    this.enc = new TextEncoder();
+    this.alive = true;
+    this.readLoop();
+    this.port.addEventListener("disconnect", () => this.close());
+  }
+  async readLoop() {
+    const dec = new TextDecoderStream();
+    this.port.readable.pipeTo(dec.writable).catch(() => {});
+    this.reader = dec.readable.getReader();
+    let buf = "";
+    try {
+      for (;;) {
+        const { value, done } = await this.reader.read();
+        if (done) break;
+        buf += value;
+        let i;
+        while ((i = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, i).replace(/\r$/, ""); buf = buf.slice(i + 1);
+          if (line) this.onLine(line);
+        }
+        if (buf.length > 20000) buf = "";
+      }
+    } catch (e) { /* port lost */ }
+    this.close();
+  }
+  send(line) {
+    if (!this.alive) return;
+    this.q = this.q.then(() => this.writer.write(this.enc.encode(line + "\n"))).catch(() => {});
+  }
+  async close() {
+    if (!this.alive) return; this.alive = false;
+    try { this.reader && await this.reader.cancel(); } catch (e) {}
+    try { this.writer && this.writer.releaseLock(); } catch (e) {}
+    try { await this.port.close(); } catch (e) {}
+    this.onClose();
+  }
+}
+
+// ============================================================================
+//  Transport: Mock device — speaks the SAME protocol as bench/src/main.cpp
+// ============================================================================
+class MockLink {
+  constructor(onLine, onClose) { this.onLine = onLine; this.onClose = onClose; }
+  async open() {
+    const now = performance.now();
+    this.t0 = now; this.alive = true; this.lastHost = 0; this.lastM = 0; this.hostSeen = false;
+    this.cfg = { PWM_MAX: 1023, PWM_MIN_MOVE: 220, PWM_FREQ_HZ: 20000, cap_default_pct: 40, SPEED_APPROACH: 260, SPEED_PIVOT: 420,
+      motor_deadman_ms: 400, host_deadman_ms: 400, dir_pwm: 280, db_step: 8, db_counts: 10, inv_mot: [0, 1], inv_enc: [0, 1],
+      WHEEL_DIAMETER_MM: 65, TRACK_WIDTH_MM: 150, ENCODER_CPR: 1440, MM_PER_COUNT: Math.PI * 65 / 1440,
+      LINE_ARRAY_TO_PIVOT_MM: 70, COLOR_HEADS_TO_CENTER_MM: 80, COLOR_HEADS_BEHIND_ARRAY_MM: 0,
+      IMU_YAW_SIGN: 1, MPU6500_ADDR: 104, gyro_deadband: 0.35, PCA9685_ADDR: 64, PCA_OSC_HZ: 27000000,
+      SERVO_MIN_US: 500, SERVO_MAX_US: 2400, SERVO_MAX_ANGLE: 180, servo_ticks: [102, 491], slew_dps: 140,
+      ARM_ANGLE_DOWN: 10, ARM_ANGLE_CARRY: 75, GRIPPER_OPEN: 100, GRIPPER_CLOSED: 25,
+      LINE_ON_THRESHOLD: 600, MIN_USABLE_SPREAD: 300, INVERT_POLARITY: 0,
+      TOF_ADDR: [48, 49, 50], TOF_OFFSET_MM: [0, 0, 0], TOF_MIN_RELIABLE_MM: 40, xshut_open_drain: 1, selftest: 1 };
+    // physical truth of the fake robot (what the bench should discover)
+    this.truth = { cpr: 1452, wheelD: 66.2, track: 171, db: [232, 247], dbPivot: 318, tofOff: [7, -3, 4], tofTilt: 4.0, gyroBias: [0.42, -0.31, 0.77] };
+    this.m = { fw: [0, 0], raw: [0, 0], stby: 0, cap: 409, pct: 40 };
+    this.enc = [0, 0]; this.encF = [0, 0]; this.bad = [0, 0];
+    this.yawTrue = 0; this.yawInt = 0; this.bias = [0, 0, 0]; this.biasSet = 0; this.handRot = 0;
+    this.seq = null; this.still = null; this.tofStatJob = [null, null, null];
+    this.tof = [0, 1, 2].map(() => ({ up: 1, f: 0, n: 0, err: 0, mode: 0, bud: 33 }));
+    this.pca = { ack: 1, up: 1, m1: 32, pre: 131, exp: 131, osc: 27000000, init: 1, rst: 0, wf: 0 };
+    this.sv = [{ en: 0, cur: 10, tgt: 10, lo: 10, hi: 75, tk: 0, cfgLo: 10, cfgHi: 75 }, { en: 0, cur: 25, tgt: 25, lo: 25, hi: 100, tk: 0, cfgLo: 25, cfgHi: 100 }];
+    this.slew = 140; this.d1 = 0; this.b1 = 0; this.beepUntil = 0; this.colSel = 3; this.colF = 0;
+    this.btn = { p: 0, n: 0 }; this.st = 0; this.lastTick = now; this.lastTl = now; this.tele = 50; this.push = 0;
+    this.timer = setInterval(() => this.tick(), 10);
+    setTimeout(() => this.hello(), 150);
+  }
+  fault() { return $("#mkFault").value; }
+  out(o) { if (this.alive) setTimeout(() => this.onLine(JSON.stringify(o)), 0); }
+  hello() {
+    const f = this.fault();
+    this.out({ ev: "hello", fw: "syrobix-bench (mock)", ver: 1, cfg: this.cfg,
+      boot: { imu_ack: 1, who: 112, imu_cfg: 1, tof_fail: [0, f === "tofL" ? 2 : 0, 0], tof_stuck: 0, pca_ack: 1, pca_up: 1,
+        i2c: f === "tofL" ? [48, 50, 64, 104, 112] : [48, 49, 50, 64, 104, 112] } });
+    if (f === "tofL") { this.tof[1].up = 0; this.tof[1].f = 2; }
+  }
+  setMotorsFw(l, r) {
+    const cap = this.m.cap;
+    this.m.fw = [clamp(l, -cap, cap), clamp(r, -cap, cap)];
+    this.m.raw = [this.m.fw[0] * (this.cfg.inv_mot[0] ? -1 : 1), this.m.fw[1] * (this.cfg.inv_mot[1] ? -1 : 1)];
+    this.m.stby = (this.m.raw[0] || this.m.raw[1]) ? 1 : 0;
+  }
+  off() { this.setMotorsFw(0, 0); }
+  send(line) {
+    if (!this.alive) return;
+    const now = performance.now(); this.lastHost = now; this.hostSeen = true;
+    const t = line.trim().toUpperCase().split(/\s+/); const c = t[0];
+    if (this.mode === "run") return this.runSend(t, now);
+    if (c === "MODE" && t[1] === "RUN") { this.out({ ev: "restarting", mode: "run" }); this.reboot("run"); return; }
+    const ack = (cmd) => this.out({ ev: "ack", cmd }); const err = (msg) => this.out({ ev: "err", cmd: c, msg });
+    switch (c) {
+      case "HB": return;
+      case "HELLO": return this.hello();
+      case "STOP": this.off(); this.seq = null; this.sv.forEach(s => { s.en = 0; s.tk = 0; }); this.b1 = 0; this.d1 = 0; return this.out({ ev: "stop", why: "cmd" });
+      case "M": if (this.seq) { this.seq = null; this.out({ ev: "seq", state: "aborted", why: "manual" }); }
+        this.setMotorsFw(+t[1] || 0, +t[2] || 0); this.lastM = now; return;
+      case "CAP": { const p = +t[1]; if (!(p >= 5 && p <= 100)) return err("usage");
+        if (p > 40 && t[2] !== "YES") return err("above 40 percent needs YES");
+        this.m.pct = p; this.m.cap = Math.floor(1023 * p / 100); this.setMotorsFw(...this.m.fw); return this.out({ ev: "cap", pct: p, pwm: this.m.cap }); }
+      case "ENC": this.enc = [0, 0]; this.encF = [0, 0]; this.bad = [0, 0]; return ack("ENC");
+      case "DIR": { const side = t[1] === "R" ? 1 : 0; const p = Math.min(+t[2] || 280, this.m.cap);
+        this.seq = { k: "dir", side, pwm: p, t0: now, e0: [...this.enc], ph: 0 };
+        side ? this.setMotorsFw(0, p) : this.setMotorsFw(p, 0); return ack("DIR"); }
+      case "DB": { const side = t[1] === "L" ? 0 : t[1] === "R" ? 1 : 2;
+        this.seq = { k: "db", side, dir: t[2] === "-" ? -1 : 1, pwm: 0, t0: now, e0: [...this.enc], move: [-1, -1] }; return ack("DB"); }
+      case "IMU":
+        if (t[1] === "STILL") { this.still = { t0: now, ms: +t[2] || 3000 }; return ack("IMU STILL"); }
+        if (t[1] === "ZERO") { this.yawInt = 0; return ack("IMU ZERO"); }
+        if (t[1] === "INIT") return this.out({ ev: "imu_init", ack: 1, who: 112, cfg: 1 });
+        return err("usage");
+      case "TOF":
+        if (t[1] === "INIT") return this.out({ ev: "tof_init", fail: this.tof.map(x => x.f), stuck: 0 });
+        if (t[1] === "STAT") { const i = (+t[2]) - 1; if (!(i >= 0 && i < 3)) return err("id 1..3");
+          if (!this.tof[i].up) return err("sensor not up"); this.tofStatJob[i] = { t0: now, ms: +t[3] || 2000, v: [], bad: 0 }; return ack("TOF STAT"); }
+        if (t[1] === "CFG") { const i = (+t[2]) - 1; this.tof[i].mode = { S: 0, M: 1, L: 2 }[t[3]] ?? 0; this.tof[i].bud = +t[4]; return ack("TOF CFG"); }
+        return err("usage");
+      case "I2C": return this.out({ ev: "i2c", found: this.fault() === "tofL" ? [48, 50, 64, 104, 112] : [48, 49, 50, 64, 104, 112] });
+      case "PCA":
+        if (t[1] === "OSC") { this.pca.osc = +t[2]; this.pca.exp = this.pca.pre = Math.floor(this.pca.osc / 204800 + 0.5 - 1); this.pca.init++; }
+        if (t[1] === "INIT") this.pca.init++;
+        return this.out({ ev: "pca", ack: 1, up: 1, mode1: this.pca.m1, prescale: this.pca.pre, expected: this.pca.exp, osc: this.pca.osc, inits: this.pca.init });
+      case "SV": { const i = t[1] === "2" || t[1] === "S2" ? 1 : 0; const s = this.sv[i];
+        if (t[2] === "OFF") { s.en = 0; s.tk = 0; return ack("SV OFF"); }
+        if (t[2] === "ON") { s.cur = s.tgt = clamp(+t[3], s.lo, s.hi); s.en = 1; return ack("SV ON"); }
+        if (!s.en) return err("enable first: SV <n> ON <deg>");
+        s.tgt = clamp(+t[2], s.lo, s.hi); return; }
+      case "SLIM": { const i = t[1] === "2" ? 1 : 0; const s = this.sv[i]; let lo = Math.max(0, +t[2]), hi = Math.min(180, +t[3]);
+        if ((lo < s.cfgLo || hi > s.cfgHi) && t[4] !== "YES") return err("outside Config.h pose range needs YES");
+        s.lo = lo; s.hi = hi; s.tgt = clamp(s.tgt, lo, hi); return ack("SLIM"); }
+      case "SLEW": this.slew = +t[1]; return ack("SLEW");
+      case "OUT": if (t[1] === "D1") this.d1 = +t[2] ? 1 : 0; else { this.b1 = +t[2] ? 1 : 0; this.beepUntil = this.b1 ? now + 3000 : 0; } return ack("OUT");
+      case "BEEP": this.b1 = 1; this.beepUntil = now + (+t[1] || 100); return ack("BEEP");
+      case "COL": this.colSel = { L: 1, R: 2, B: 3, OFF: 0 }[t[1]] ?? 3; return ack("COL");
+      case "TELE": this.tele = clamp(+t[1] || 50, 20, 1000); return ack("TELE");
+      default: return err("unknown command");
+    }
+  }
+  wheelSpeed(raw, side) {   // counts per second, as wired (raw sign)
+    const db = this.truth.db[side]; const a = Math.abs(raw);
+    if (!this.m.stby || a < db) return 0;
+    return Math.sign(raw) * (a - db) * 9.5;
+  }
+  tick() {
+    const now = performance.now(); const dt = (now - this.lastTick) / 1000; this.lastTick = now;
+    if (this.booting) return;
+    if (this.mode === "run") return this.runTick(now);
+    const f = this.fault();
+    // deadman
+    if (!this.seq && (this.m.fw[0] || this.m.fw[1]) && now - this.lastM > 400) { this.off(); this.out({ ev: "deadman" }); }
+    if (this.seq && (!this.hostSeen || now - this.lastHost > 400)) { this.seq = null; this.off(); this.out({ ev: "seq", state: "aborted", why: "no heartbeat" }); }
+    // drivetrain physics: raw pins -> wheel direction (motor wiring) -> encoder (wiring)
+    let wheel = [this.wheelSpeed(this.m.raw[0], 0), this.wheelSpeed(this.m.raw[1], 1)];
+    // physical forward per side: left forward = raw +, right forward = raw - (mirrored, as firmware assumes)
+    let fwdSpeed = [wheel[0], -wheel[1]];
+    if (f === "swapMot") fwdSpeed = [fwdSpeed[1], fwdSpeed[0]];
+    if (this.seq && this.seq.k === "db" && this.seq.side === 2) {
+      const pivotOk = Math.abs(this.m.fw[0]) >= this.truth.dbPivot && Math.abs(this.m.fw[1]) >= this.truth.dbPivot;
+      if (!pivotOk) fwdSpeed = [0, 0];
+    }
+    if (this.push) { const step = Math.min(this.push, 400 * dt); this.push -= step; const c = step / (Math.PI * this.truth.wheelD) * this.truth.cpr; fwdSpeed = [fwdSpeed[0] + c / dt, fwdSpeed[1] + c / dt]; }
+    for (let s = 0; s < 2; s++) {
+      let rawCount = fwdSpeed[s] * dt * (s === 1 ? -1 : 1);   // encoder R mounted mirrored
+      if (s === 1 && f === "encR") rawCount = -rawCount;
+      this.encF[s] += rawCount; this.enc[s] = Math.round(this.encF[s]);
+    }
+    // yaw truth: CCW (left) positive
+    const vL = fwdSpeed[0] / this.truth.cpr * Math.PI * this.truth.wheelD, vR = fwdSpeed[1] / this.truth.cpr * Math.PI * this.truth.wheelD;
+    let rate = (vR - vL) / this.truth.track * 57.2958;
+    if (this.handRot) { const r = Math.sign(this.handRot) * Math.min(Math.abs(this.handRot), 90 * dt); this.handRot -= r; rate += r / dt; }
+    this.yawTrue += rate * dt;
+    this.rateTrue = rate;
+    // sequences
+    if (this.seq) this.seqTick(now);
+    // servos
+    for (const s of this.sv) if (s.en) {
+      const d = s.tgt - s.cur, st = this.slew * dt; s.cur = Math.abs(d) <= st ? s.tgt : s.cur + Math.sign(d) * st;
+      s.tk = Math.round(102 + (Math.round(s.cur) * (491 - 102)) / 180);
+    }
+    if (this.b1 && this.beepUntil && now > this.beepUntil) { this.b1 = 0; this.beepUntil = 0; }
+    if (f === "pcaBrown" && this.sv.some(s => s.en && Math.abs(s.tgt - s.cur) > 20) && Math.random() < 0.02) { this.pca.rst++; this.pca.init++; }
+    // still test
+    if (this.still && now - this.still.t0 >= this.still.ms) {
+      const n = Math.round(this.still.ms / 5), g = this.truth.gyroBias, frz = f === "imuFrozen";
+      const gs = frz ? [0, 0, 0] : [0.061, 0.058, 0.072];
+      this.out({ ev: "imu_still", n, ms: this.still.ms, frozen: frz ? n : 0, g_mean: g, g_std: gs, a_mean: [0.012, -0.021, 0.998], a_std: frz ? [0, 0, 0] : [0.0021, 0.0019, 0.0026], a_norm: 0.9983 });
+      this.bias = [...g]; this.biasSet = 1; this.yawInt = 0; this.still = null;
+    }
+    // integrated yaw as the device would report it (raw sign)
+    const sign = f === "imuUpside" ? -1 : 1;
+    let gz = sign * rate + this.truth.gyroBias[2] - this.bias[2] + (Math.random() - 0.5) * 0.15;
+    if (f === "imuFrozen") gz = 0;
+    this.gzOut = gz;
+    if (Math.abs(gz) >= 0.35) this.yawInt += gz * dt;
+    // tof stat jobs
+    for (let i = 0; i < 3; i++) {
+      const j = this.tofStatJob[i]; if (!j) continue;
+      if (Math.random() < dt / 0.038) j.v.push(this.tofMm(i));
+      if (now - j.t0 >= j.ms) {
+        const v = j.v, n = v.length, mean = v.reduce((a, b) => a + b, 0) / Math.max(1, n);
+        const sd = Math.sqrt(v.reduce((a, b) => a + (b - mean) ** 2, 0) / Math.max(1, n));
+        this.out({ ev: "tof_stat", id: i + 1, n, bad: 0, mean: +mean.toFixed(2), std: +sd.toFixed(2), min: Math.min(...v), max: Math.max(...v), ms: j.ms });
+        this.tofStatJob[i] = null;
+      }
+    }
+    if (now - this.lastTl >= this.tele) { this.lastTl = now; this.telemetry(now); }
+  }
+  seqTick(now) {
+    const q = this.seq;
+    if (q.k === "dir") {
+      if (q.ph === 0 && now - q.t0 >= 500) { this.off(); q.ph = 1; q.t0 = now; }
+      else if (q.ph === 1 && now - q.t0 >= 300) {
+        const dRaw = [this.enc[0] - q.e0[0], this.enc[1] - q.e0[1]];
+        this.out({ ev: "dir", side: q.side ? "R" : "L", pwm: q.pwm, d_raw: dRaw, d_fw: [dRaw[0], -dRaw[1]], inv_mot: [0, 1], inv_enc: [0, 1] });
+        this.seq = null;
+      }
+    } else if (q.k === "db") {
+      for (let s = 0; s < 2; s++) {
+        const tested = q.side === 2 || q.side === s;
+        if (tested && q.move[s] < 0 && Math.abs(this.enc[s] - q.e0[s]) >= 10) q.move[s] = q.pwm;
+      }
+      const done = q.side === 2 ? (q.move[0] >= 0 && q.move[1] >= 0) : q.move[q.side] >= 0;
+      const finish = (result) => { this.off(); this.out({ ev: "db", mode: "LRP"[q.side], dir: q.dir, move: q.move, cap: this.m.cap, step: 8, result }); this.seq = null; };
+      if (done) return finish("moved");
+      if (now - q.t0 >= 80) {
+        q.t0 = now; q.pwm += 8; if (q.pwm > this.m.cap) return finish("cap");
+        const p = q.pwm * q.dir;
+        if (q.side === 0) this.setMotorsFw(p, 0); else if (q.side === 1) this.setMotorsFw(0, p); else this.setMotorsFw(-p, p);
+      }
+    }
+  }
+  tofMm(i) {
+    const wall = +$("#mkWall").value || 150;
+    const yawRel = (this.yawTrue % 360 + 360) % 360;
+    const off = i === 0 ? 0 : (i === 1 ? 90 : -90);
+    let ang = ((yawRel - off - (i === 0 ? this.truth.tofTilt : 0)) + 540) % 360 - 180;
+    let d = Math.abs(ang) < 40 ? wall / Math.cos(ang * Math.PI / 180) : 1300;
+    if (i > 0) d = Math.abs(ang) < 40 ? 260 / Math.cos(ang * Math.PI / 180) : 1300;
+    return Math.round(d - this.truth.tofOff[i] + (Math.random() - 0.5) * 6);
+  }
+  telemetry(now) {
+    const f = this.fault();
+    const linePos = (+$("#mkLine").value) / 100; const floor = $("#mkFloor").value;
+    const l = [];
+    for (let i = 0; i < 8; i++) {
+      const x = i < 6 ? (i - 2.5) / 2.5 : (i === 6 ? -0.2 : 0.2);
+      let dark = floor === "black" ? 1 : floor === "white" ? 0 : Math.exp(-((x - linePos) ** 2) / 0.12);
+      let v = 520 + i * 13 + dark * (2700 - i * 40) + (Math.random() - 0.5) * 40;
+      if (f === "line3" && i === 3) v = 4095;
+      l.push(Math.round(clamp(v, 0, 4095)));
+    }
+    const yawRad = this.yawTrue * Math.PI / 180;
+    const tof = this.tof.map((s, i) => {
+      if (!s.up) return { up: 0, f: s.f, mm: 0, st: 255, sig: 0, amb: 0, age: 0, n: 0, err: 0, mode: s.mode, bud: s.bud, stat: 0 };
+      s.n += 1; const mm = this.tofMm(i); const st = mm > 1200 ? 2 : 0;
+      return { up: 1, f: 0, mm, st, sig: +(st ? 0.4 : 18 - mm / 40).toFixed(2), amb: 0.31, age: Math.round(Math.random() * 38), n: s.n, err: 0, mode: s.mode, bud: s.bud, stat: this.tofStatJob[i] ? 1 : 0 };
+    });
+    const colHead = (dead) => dead ? [0, 0, 0, 0] : [1210 + Math.round(Math.random() * 20), 1180 + Math.round(Math.random() * 20), 1320 + Math.round(Math.random() * 20), 3900 + Math.round(Math.random() * 30)];
+    this.colF++;
+    const frz = f === "imuFrozen";
+    const tl = { ty: "tl", t: Math.round(now - this.t0), loop: 900 + Math.round(Math.random() * 300),
+      m: { fw: this.m.fw, raw: this.m.raw, stby: this.m.stby, cap: this.m.cap, pct: this.m.pct, seq: this.seq ? this.seq.k : "none" },
+      e: { raw: this.enc, fw: [this.enc[0], -this.enc[1]], bad: this.bad }, l,
+      g: { ok: 1, who: 112, cfg: 1, g: frz ? [0, 0, 0] : [+(this.truth.gyroBias[0] - this.bias[0] + (Math.random() - .5) * .12).toFixed(3), +(this.truth.gyroBias[1] - this.bias[1] + (Math.random() - .5) * .12).toFixed(3), +this.gzOut.toFixed(3)],
+        a: [0.012, -0.021, 0.998].map(v => frz ? v : +(v + (Math.random() - .5) * .006).toFixed(4)), yaw: +this.yawInt.toFixed(2), roll: -1.2, pitch: 0.7, tC: 31.4, bias: this.biasSet, still: this.still ? 1 : 0,
+        frz: frz ? 1 : 0, zero: 0, ff: 0, err: 0 },
+      tof, p: this.pca, s: this.sv.map(s => ({ en: s.en, cur: +s.cur.toFixed(1), tgt: s.tgt, lo: s.lo, hi: s.hi, tk: s.tk })), slew: this.slew, d1: this.d1, b1: this.b1,
+      c: { sel: this.colSel, f: this.colF, L: this.colSel & 1 ? colHead(false) : [0, 0, 0, 0], R: this.colSel & 2 ? colHead(f === "colR") : [0, 0, 0, 0] },
+      btn: this.btn, st: this.st };
+    void yawRad;
+    this.onLine(JSON.stringify(tl));
+  }
+  // --- RUN mode simulation (scripted mission), protocol of run_mode.cpp ---
+  reboot(mode) {
+    this.booting = true;
+    setTimeout(() => {
+      this.booting = false; this.mode = mode;
+      if (mode === "run") { this.r = { st: "CALIBRATING", prev: "BOOT", t0: performance.now(), match: 0, colors: 0, zone: 0, mines: 0, vic: 0, deliv: 0, att: 0, lop: 0, score: 0, estop: 0, ls: 0, us: 0, linkstop: 1, lastSt: 0 }; this.runHello(); }
+      else this.hello();
+    }, 2500);
+  }
+  runHello() { this.out({ ev: "hello", mode: "run", fw: "syrobix-bench-wifi (mock)", ver: 1, ip: "192.168.4.1", net: "ap", fault: "", linkstop: this.r.linkstop, linkstop_ms: 1500 }); }
+  runGo(st) { const r = this.r; r.prev = r.st; r.st = st; r.t0 = performance.now(); }
+  runSend(t, now) {
+    const c = t[0], r = this.r;
+    if (c === "HB") return;
+    if (c === "HELLO") return this.runHello();
+    if (c === "STOP") { r.estop = 1; r.us = 1; return this.out({ ev: "stop", why: "cmd" }); }
+    if (c === "LINKSTOP") { r.linkstop = t[1] !== "0"; return this.out({ ev: "ack", cmd: "LINKSTOP" }); }
+    if (c === "MODE") { this.out({ ev: "restarting", mode: t[1] === "RUN" ? "run" : "bench" }); return this.reboot(t[1] === "RUN" ? "run" : "bench"); }
+    if (c === "START") {
+      this.out({ ev: "ack", cmd: "START" });
+      if (r.estop) return;
+      const el = now - r.t0;
+      if (r.st === "CALIBRATING" && el > 6000) { if (++r.colors >= 4) this.runGo("IDLE_ARMED"); }
+      else if (r.st === "IDLE_ARMED") { this.runGo("LINE_FOLLOW"); r.match = now; }
+      else if (r.st === "LACK_OF_PROGRESS") this.runGo("LINE_FOLLOW");
+      return;
+    }
+    this.out({ ev: "err", cmd: c, msg: "run mode: HB HELLO START STOP LINKSTOP MODE" });
+  }
+  runTick(now) {
+    const r = this.r; if (!r) return;
+    const el = now - r.t0;
+    const moving = !["CALIBRATING", "IDLE_ARMED", "LACK_OF_PROGRESS", "FINISHED", "FAULT"].includes(r.st);
+    if (moving && r.linkstop && !r.estop && now - this.lastHost > 1500) { r.estop = 1; r.ls = 1; }
+    if (!r.estop) {
+      const script = { LINE_FOLLOW: [3000, () => (r.zone ? "EXIT_SEEK" : r.turned ? "ZONE_ENTERED" : (r.turned = 1, "TURNING"))],
+        TURNING: [1200, () => "LINE_FOLLOW"], ZONE_ENTERED: [1500, () => "MINE_DEFUSE"],
+        MINE_DEFUSE: [7000, () => { r.mines++; r.score += 5; return r.mines < 3 ? "ZONE_ENTERED" : (r.score += 5, "VICTIM_SCAN"); }],
+        VICTIM_SCAN: [3000, () => (r.att++, "VICTIM_ALIGN")], VICTIM_ALIGN: [1500, () => "VICTIM_APPROACH"], VICTIM_APPROACH: [2000, () => "VICTIM_GRIP"],
+        VICTIM_GRIP: [1000, () => "VICTIM_LIFT"], VICTIM_LIFT: [1000, () => (r.vic = 1, "LINE_FOLLOW")],
+        EXIT_SEEK: [4000, () => "EXIT_HOLD"], EXIT_HOLD: [5000, () => (r.deliv = 1, r.score += 40, "FINISHED")] };
+      if (r.st === "ZONE_ENTERED") r.zone = 1;
+      const step = script[r.st];
+      if (step && el >= step[0]) this.runGo(step[1]());
+    }
+    if (now - r.lastSt < 200) return; r.lastSt = now;
+    const tNow = Math.round(now - this.t0);
+    this.onLine(JSON.stringify({ ty: "run", t: tNow, st: 0, name: r.st, prev: r.prev, in: Math.round(el), match: r.match ? Math.round(now - r.match) : 0,
+      zone: r.zone, mines: r.mines, vic: r.vic, deliv: r.deliv, att: r.att, lop: r.lop, score: r.score, estop: r.estop, linkstopped: r.ls, userstop: r.us, btn: 0, snap: 1,
+      line: Math.sin(now / 700) * 0.3, lost: 0, act: 2, yaw: (now / 50) % 360 - 180, pitch: 0.4, ramp: 0, imu: 1, fr: 600, lr: 300, rr: 280,
+      cl: r.st === "MINE_DEFUSE" ? 4 : 1, cr: r.st === "MINE_DEFUSE" ? 4 : 1, fault: "" }));
+  }
+  close() { this.alive = false; clearInterval(this.timer); this.onClose(); }
+}
+
+// ============================================================================
+//  Link management, heartbeat, deadman refresh
+// ============================================================================
+function send(line) {
+  if (!S.link) { toast("مو متصل"); return false; }
+  if (line !== "HB" && !/^M /.test(line) && !/^SV \d -?\d+$/.test(line)) logLine(">", line);
+  S.link.send(line);
+  return true;
+}
+function onLine(line) {
+  let o;
+  try { o = JSON.parse(line); } catch (e) { logLine("<", line); return; }
+  if (o.ty === "tl") { onTelemetry(o); return; }
+  if (o.ty === "run") { onRunStatus(o); return; }
+  logLine("<", line);
+  onEvent(o);
+}
+function onClose() {
+  S.link = null; $("#connBtn").textContent = S.mock ? "Connect (mock)" : "🔌 USB"; $("#wifiBtn").textContent = "📶 Wi-Fi";
+  setPill("#connPill", "مقطوع", "fail");
+  toast("انقطع الاتصال. الموتورات بتوقف لحالها (deadman).");
+}
+async function connect() {
+  if (S.link) { await S.link.close(); return; }
+  if (!S.mock && !("serial" in navigator)) {
+    ask(`<p>المتصفح ما بيدعم Web Serial. استخدم <b>Chrome</b> أو <b>Edge</b> على الكمبيوتر.</p>
+      <p>إذا فاتح الملف مباشرة وما اشتغل، شغّل سيرفر محلي من مجلد <span class="n">bench/web</span>:</p>
+      <pre class="n">python -m http.server 8765</pre><p>وافتح <span class="n">http://localhost:8765</span></p>`, [["تمام", 1, "pri"]]);
+    return;
+  }
+  const L = S.mock ? new MockLink(onLine, onClose) : new SerialLink(onLine, onClose);
+  try { await L.open(); } catch (e) { toast("ما قدرت افتح المنفذ: " + e.message); return; }
+  S.link = L; $("#connBtn").textContent = "Disconnect"; setPill("#connPill", "متصل", "ok");
+  setTimeout(() => send("HELLO"), 400);
+}
+async function connectWifi() {
+  if (S.link) { await S.link.close(); return; }
+  const host = $("#wifiHost").value.trim() || "192.168.4.1";
+  try { localStorage.setItem("syrobix-bench:host", host); } catch (e) {}
+  const L = new WsLink(onLine, onClose, host);
+  setPill("#connPill", "عم يتصل بـ " + host + "…", "warn");
+  try { await L.open(); } catch (e) {
+    setPill("#connPill", "مقطوع", "fail");
+    ask(`<p>ما قدرت اتصل بـ <span class="n">${host}</span>.</p><ul>
+      <li>اللابتوب/الموبايل متصل بشبكة <b>SYROBIX-BENCH</b>؟</li>
+      <li>الروبوت عليه برنامج <b>bench_wifi</b> (مو bench العادي)؟</li>
+      <li>إذا الروبوت على راوتر البيت، اكتب العنوان اللي طبعه عالـ Serial.</li></ul>`, [["تمام", 1, "pri"]]);
+    return;
+  }
+  S.link = L; $("#wifiBtn").textContent = "Disconnect"; setPill("#connPill", "متصل (Wi-Fi)", "ok");
+}
+// One timer: heartbeat + motor refresh every 150 ms. If the page stalls (tab
+// hidden, laptop asleep) these stop and the device deadman stops the motors.
+setInterval(() => {
+  if (!S.link) return;
+  const l = +$("#mL").value, r = +$("#mR").value;
+  if ((l || r) && S.mode !== "run") S.link.send(`M ${l} ${r}`);
+  S.link.send("HB");
+}, 150);
+setInterval(() => {   // rate meter + stale link detection
+  S.rate = S.tlCount; S.tlCount = 0;
+  $("#ratePill").textContent = S.rate + " Hz";
+  if (S.link && performance.now() - S.lastTlAt > 1000) setPill("#connPill", "متصل — ما في تليمتري", "warn");
+  else if (S.link) setPill("#connPill", "متصل", "ok");
+}, 1000);
+function setPill(sel, txt, cls) { const p = $(sel); p.textContent = txt; p.className = "pill " + (cls || ""); }
+
+function stopAll(why) {
+  $("#mL").value = 0; $("#mR").value = 0; $("#mlv").textContent = 0; $("#mrv").textContent = 0;
+  if (S.link) S.link.send("STOP");
+  logLine(">", "STOP (" + why + ")");
+}
+$("#stopBtn").onclick = () => stopAll("button");
+document.addEventListener("keydown", (e) => {
+  if (e.code === "Space" && document.activeElement !== $("#rawCmd")) { e.preventDefault(); stopAll("space"); }
+});
+window.addEventListener("beforeunload", () => { if (S.link) S.link.send("STOP"); });
+
+// ============================================================================
+//  Events from the device
+// ============================================================================
+function onEvent(o) {
+  switch (o.ev) {
+    case "hello":
+      setMode(o.mode === "run" ? "run" : "bench", o);
+      if (o.mode === "run") break;
+      S.hello = o; renderBoot(); buildServoCards(); buildTofCards(); applyCfgLimits(); renderRunBench(); break;
+    case "restarting": toast(o.mode === "run" ? "الروبوت عم يعيد التشغيل على كود المسابقة…" : "الروبوت راجع لوضع الفحص…", 6000); break;
+    case "imu_still": S.imuStill = o; renderStill(); break;
+    case "tof_stat": S.tofStat[o.id] = o; renderTofStat(o.id); break;
+    case "dir": onDir(o); break;
+    case "db": onDb(o); break;
+    case "deadman": toast("deadman: الموتورات وقفت لأنه ما وصل أمر جديد خلال 400 ms"); break;
+    case "seq": if (o.state === "aborted") toast("التسلسل انلغى: " + o.why); break;
+    case "i2c": renderI2c(o.found); break;
+    case "cap": $("#capTxt").textContent = o.pct + "%"; applyCap(o.pwm); break;
+    case "err": toast("خطأ من الجهاز: " + o.cmd + " — " + o.msg, 5000); break;
+    case "stop": toast("STOP — كل شي وقف"); break;
+    case "selftest": toast("اختبار ذاتي: " + o.state); break;
+    case "tof_init": toast("TOF INIT: " + o.fail.map((f, i) => "T" + (i + 1) + "=" + TOF_FAIL[f]).join("، "), 6000); break;
+  }
+}
+
+// ============================================================================
+//  Telemetry -> state, recording, render (throttled)
+// ============================================================================
+let renderPending = false;
+function onTelemetry(tl) {
+  S.tl = tl; S.lastTlAt = performance.now(); S.tlCount++;
+  const H = S.hist, push = (a, v, n = 200) => { a.push(v); if (a.length > n) a.shift(); };
+  push(H.gz, tl.g.g[2]); push(H.yaw, tl.g.yaw);
+  tl.tof.forEach((t, i) => push(H.tof[i], t.up ? t.mm : null));
+  // line capture / sweep
+  if (S.capturing) { S.capturing.acc.push(tl.l); }
+  if (S.sweep) {
+    const L = S.line; L.min = L.min || tl.l.slice(); L.max = L.max || tl.l.slice();
+    tl.l.forEach((v, i) => { L.min[i] = Math.min(L.min[i], v); L.max[i] = Math.max(L.max[i], v); });
+  }
+  if (S.tiltRun) { for (const k of S.tiltRun) k.pts.push([tl.g.yaw, tl.tof[k.i].mm, tl.tof[k.i].st]); }
+  if (S.rec.on) recordRow(tl);
+  // A plain timer, not requestAnimationFrame: rAF pauses in a hidden window and
+  // the verdicts would freeze while the robot keeps talking.
+  if (!renderPending) { renderPending = true; setTimeout(() => { renderPending = false; render(); }, 100); }
+}
+function recordRow(t) {
+  const r = [t.t, ...t.m.fw, ...t.m.raw, t.m.stby, ...t.e.raw, ...t.e.fw, ...t.l, ...t.g.g, ...t.g.a, t.g.yaw, t.g.roll, t.g.pitch,
+    ...t.tof.flatMap(x => [x.mm, x.st, x.sig]), t.s[0].cur, t.s[1].cur, ...t.c.L, ...t.c.R, t.btn.p, t.p.up, t.p.rst, t.loop];
+  S.rec.rows.push(r.join(","));
+  if (S.rec.rows.length % 20 === 0) $("#recInfo").textContent = S.rec.rows.length + " سطر";
+}
+const CSV_HEAD = ["t_ms", "m_fw_L", "m_fw_R", "m_raw_L", "m_raw_R", "stby", "enc_raw_L", "enc_raw_R", "enc_fw_L", "enc_fw_R",
+  "L0", "L1", "L2", "L3", "L4", "L5", "L6", "L7", "gx", "gy", "gz", "ax", "ay", "az", "yaw", "roll", "pitch",
+  "t1_mm", "t1_st", "t1_sig", "t2_mm", "t2_st", "t2_sig", "t3_mm", "t3_st", "t3_sig", "s1", "s2",
+  "c1_r", "c1_g", "c1_b", "c1_c", "c2_r", "c2_g", "c2_b", "c2_c", "btn", "pca_up", "pca_resets", "loop_us"];
+
+// ============================================================================
+//  Verdicts
+// ============================================================================
+const TOF_FAIL = ["OK", "الباص عالق (حدا رد وكل XSHUT واطي)", "ما في رد على 0x29 بعد فك XSHUT", "init فشل (شريحة غلط؟ VL53L0X؟)",
+  "تغيير العنوان ما ثبت", "الإعداد انرفض", "ما انجرّب"];
+const TOF_ST = { 0: "صالح", 1: "sigma fail", 2: "إشارة ضعيفة/ما في هدف", 3: "قريب جداً (مقبول)", 4: "خارج الحدود", 5: "عطل عتاد", 6: "بدون فحص wrap", 7: "wrap", 255: "ما في قراءة" };
+const WHO_NAMES = { 0x70: "MPU6500 ✓", 0x71: "MPU9250", 0x73: "MPU9255", 0x68: "MPU6050 / MPU6000", 0x98: "ICM-20689", 0x12: "ICM-20602", 0xAF: "ICM-20608", 0x11: "ICM-20600", 0x74: "MPU6515", 0x00: "صفر: الشريحة مو شغالة", 0xFF: "0xFF: الباص عايم" };
+
+function setV(id, s, n) { S.V[id] = { s, n }; }
+function evaluate() {
+  const t = S.tl, h = S.hello; if (!t) return;
+  const C = h ? h.cfg : null;
+  // P1
+  const p = t.p;
+  if (!p.ack) setV("P1", "fail", "ما بيرد على 0x40");
+  else if (!p.up) setV("P1", "fail", "نايم (SLEEP) أو prescale=0");
+  else if (p.pre !== p.exp) setV("P1", "warn", `prescale ${p.pre} ≠ ${p.exp}`);
+  else if (p.rst > 0) setV("P1", "warn", `انعمل reset ${p.rst} مرة (هبوط جهد؟)`);
+  else setV("P1", "ok", `prescale ${p.pre}، inits ${p.init}`);
+  // G1
+  const g = t.g;
+  if (!g.ok) setV("G1", "fail", h && !h.boot.imu_ack ? "ما بيرد على 0x68" : "مو موجود");
+  else if (g.frz || g.zero || g.ff) setV("G1", "fail", g.frz ? "قراءات متجمّدة" : g.zero ? "كل القيم صفر" : "كل القيم 0xFFFF");
+  else if (g.who !== 0x70) setV("G1", "warn", `WHO_AM_I=${hex(g.who)}: مو MPU6500 (الـ firmware رح يرفضه)`);
+  else if (!g.cfg) setV("G1", "warn", "الكتابة على السجلات ما ثبتت");
+  else if (S.imuStill) { const v = stillVerdict(S.imuStill); setV("G1", v.s, v.n); }
+  else setV("G1", "unk", "0x70 ✓ — شغّل اختبار الثبات");
+  // T1..T3
+  t.tof.forEach((s, i) => {
+    const id = "T" + (i + 1);
+    if (!s.up) setV(id, "fail", TOF_FAIL[s.f] || "مو شغّال");
+    else if (s.age > 500) setV(id, "fail", "وقف عن القياس");
+    else if (s.st === 0 || s.st === 3) setV(id, s.err > 0 ? "warn" : "ok", `${s.mm} mm${s.err ? "، أخطاء " + s.err : ""}`);
+    else setV(id, "warn", TOF_ST[s.st] || ("status " + s.st));
+  });
+  // L0..L7
+  const L = lineCal();
+  for (let i = 0; i < 8; i++) {
+    const id = "L" + i, v = t.l[i];
+    if (L) {
+      const spread = L.hi[i] - L.lo[i], minS = C ? C.MIN_USABLE_SPREAD : 300;
+      if (spread < minS) setV(id, "fail", `فرق ${spread} < ${minS}`);
+      else if (L.inv && L.inv[i]) setV(id, "warn", `مقلوب (الأسود أوطى)، فرق ${spread}`);
+      else setV(id, "ok", `فرق ${spread}`);
+    } else if (v <= 5 || v >= 4090) setV(id, "warn", `${v}: مشبع`);
+    else setV(id, "unk", `${v} — التقط أبيض/أسود`);
+  }
+  // C1/C2
+  ["L", "R"].forEach((k, i) => {
+    const id = "C" + (i + 1), on = t.c.sel & (1 << i), v = t.c[k];
+    if (!on) setV(id, "unk", "مو مختار");
+    else if (v.every(x => x === 0)) setV(id, "fail", "ما في نبض (timeout)");
+    else if (v.some(x => x === 0)) setV(id, "warn", "فلتر واحد ما بيرد");
+    else setV(id, "ok", `clear ${v[3]}`);
+  });
+  // BTN
+  if (t.btn.n > 0) setV("BTN", "ok", `انضغط ${t.btn.n} مرة`);
+  else if (t.btn.p) setV("BTN", "warn", "مضغوط هلق (عالق؟)");
+  else setV("BTN", "unk", "اضغطه مرة");
+  // M/E from the direction test
+  ["L", "R"].forEach((k, i) => {
+    const r = S.dirRes[k];
+    const mid = "M" + (i + 1), eid = "E" + (i + 1);
+    if (!r) { setV(mid, "unk", "اعمل اختبار الاتجاه"); setV(eid, "unk", "اعمل اختبار الاتجاه"); return; }
+    setV(mid, r.motor.s, r.motor.n); setV(eid, r.enc.s, r.enc.n);
+    const bad = t.e.bad[i];
+    if (bad > 20 && S.V[eid].s === "ok") setV(eid, "warn", `انتقالات غلط ${bad} (ضجيج؟)`);
+  });
+  // manual
+  for (const id of ["D1", "B1", "S1", "S2"]) {
+    const m = S.man[id];
+    if (m) setV(id, m, m === "ok" ? "مأكد بالعين/الأذن" : "معلّم معطّل");
+    else setV(id, "unk", (id === "S1" || id === "S2") && !p.up ? "PCA مو شغّال" : "جرّب وعلّم");
+  }
+}
+function stillVerdict(r) {
+  if (r.frozen > 0) return { s: "fail", n: "تجمّد أثناء الاختبار" };
+  const gsMax = Math.max(...r.g_std), gbMax = Math.max(...r.g_mean.map(Math.abs));
+  const an = r.a_norm, asMax = Math.max(...r.a_std);
+  if (gsMax > 0.3) return { s: "fail", n: `ضجيج gyro ${gsMax.toFixed(2)} °/s` };
+  const warns = [];
+  if (gsMax > 0.15) warns.push(`ضجيج gyro ${gsMax.toFixed(2)}`);
+  if (gbMax > 5) warns.push(`bias ${gbMax.toFixed(1)} °/s`);
+  if (an < 0.9 || an > 1.1) warns.push(`|a|=${an.toFixed(3)} g`);
+  if (asMax > 0.01) warns.push(`ضجيج accel ${asMax.toFixed(3)} g`);
+  return warns.length ? { s: "warn", n: "مشبوه: " + warns.join("، ") } : { s: "ok", n: `ثابت، ضجيج ${gsMax.toFixed(3)} °/s` };
+}
+
+// ============================================================================
+//  Rendering
+// ============================================================================
+function badge(sel, v) { const b = $(sel); if (!b) return; const s = v ? v.s : "unk";
+  b.className = "badge " + s; b.textContent = { ok: "OK", warn: "تحذير", fail: "فشل", unk: "؟" }[s]; b.title = v ? v.n : ""; }
+function render() {
+  const t = S.tl; if (!t) return;
+  evaluate();
+  renderTiles();
+  const tab = currentTab;
+  if (tab === "imu") renderImu(t);
+  if (tab === "tof") renderTof(t);
+  if (tab === "line") renderLine(t);
+  if (tab === "mot") renderMot(t);
+  if (tab === "srv") renderSrv(t);
+  if (tab === "pca") renderPca(t);
+  if (tab === "col") renderCol(t);
+  if (tab === "btn") renderBtn(t);
+  if (tab === "cfg") renderCfg();
+}
+function renderTiles() {
+  const box = $("#tiles");
+  if (!box.children.length) {
+    for (const [id, name, tab] of ELEMENTS) {
+      const d = document.createElement("div"); d.className = "tile"; d.id = "tile-" + id;
+      d.innerHTML = `<div><span class="id">${id}</span> ${name}</div><div class="note"></div>`;
+      d.onclick = () => showTab(tab); box.appendChild(d);
+    }
+  }
+  for (const [id] of ELEMENTS) {
+    const v = S.V[id] || { s: "unk", n: "—" }, d = $("#tile-" + id);
+    d.className = "tile " + v.s; d.querySelector(".note").textContent = v.n;
+  }
+}
+function renderBoot() {
+  const h = S.hello; if (!h) return;
+  const b = h.boot;
+  $("#bootInfo").innerHTML = `<div class="kv">
+    <span class="k">برنامج</span><span class="n">${h.fw} v${h.ver}</span>
+    <span class="k">IMU</span><span>${b.imu_ack ? "WHO_AM_I " + hex(b.who) : "ما رد"}</span>
+    <span class="k">ToF</span><span>${b.tof_fail.map((f, i) => "T" + (i + 1) + ": " + TOF_FAIL[f]).join("<br>")}</span>
+    <span class="k">PCA9685</span><span>${b.pca_ack ? (b.pca_up ? "شغّال" : "بيرد بس مو شغّال") : "ما رد"}</span></div>`;
+  renderI2c(b.i2c);
+  $("#capSel").value = String(h.cfg.cap_default_pct);
+  $("#dirPwm").value = h.cfg.dir_pwm;
+}
+const I2C_KNOWN = { 0x68: "G1 MPU6500 (AD0=0)", 0x69: "MPU (AD0=1) — العنوان غلط!", 0x30: "T1 ToF أمامي", 0x31: "T2 ToF يسار", 0x32: "T3 ToF يمين",
+  0x29: "ToF على العنوان الافتراضي — ما انعاد تعيينه!", 0x40: "P1 PCA9685", 0x70: "PCA9685 ALL-CALL (طبيعي)" };
+function renderI2c(found) {
+  const expect = [0x68, 0x30, 0x31, 0x32, 0x40];
+  let rows = "<tr><th>العنوان</th><th>شو هو</th></tr>";
+  for (const a of found) rows += `<tr><td class="n">${hex(a)}</td><td>${I2C_KNOWN[a] || "غير متوقع"}</td></tr>`;
+  for (const a of expect) if (!found.includes(a)) rows += `<tr><td class="n">${hex(a)}</td><td style="color:var(--fail)">ناقص: ${I2C_KNOWN[a]}</td></tr>`;
+  $("#i2cTbl").innerHTML = rows;
+}
+function renderStages() {
+  $("#stages").innerHTML = STAGES.map(([k, txt]) =>
+    `<label class="row"><input type="checkbox" data-stage="${k}" ${S.stages[k] ? "checked" : ""}> ${txt}</label>`).join("");
+  $$("[data-stage]").forEach(c => c.onchange = () => { S.stages[c.dataset.stage] = c.checked; store("stages", S.stages); });
+}
+function spark(cv, data, opt = {}) {
+  const ctx = cv.getContext("2d"), W = cv.width, H = cv.height;
+  ctx.clearRect(0, 0, W, H);
+  const v = data.filter(x => x !== null && isFinite(x)); if (v.length < 2) return;
+  let lo = opt.lo ?? Math.min(...v), hi = opt.hi ?? Math.max(...v); if (hi - lo < (opt.minSpan || 1)) { const m = (hi + lo) / 2; lo = m - (opt.minSpan || 1) / 2; hi = m + (opt.minSpan || 1) / 2; }
+  ctx.strokeStyle = "#2a313b"; ctx.beginPath(); const z = H - (0 - lo) / (hi - lo) * H; ctx.moveTo(0, z); ctx.lineTo(W, z); ctx.stroke();
+  ctx.strokeStyle = opt.color || "#4c8dff"; ctx.lineWidth = 2; ctx.beginPath();
+  data.forEach((x, i) => { if (x === null) return; const px = i / (data.length - 1) * W, py = H - (x - lo) / (hi - lo) * H; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); });
+  ctx.stroke();
+  ctx.fillStyle = "#8b95a3"; ctx.font = "11px Consolas"; ctx.fillText(hi.toFixed(1), 4, 12); ctx.fillText(lo.toFixed(1), 4, H - 4);
+}
+
+// ---------------- IMU ----------------
+function renderImu(t) {
+  const g = t.g;
+  $("#g1who").textContent = g.ok ? hex(g.who) : "—";
+  $("#g1whoTxt").textContent = g.ok ? (WHO_NAMES[g.who] || "شريحة غير معروفة") + (g.who === 0x70 ? "" : " — المتوقع 0x70 (MPU6500)") : "ما في رد من 0x68. افحص التوصيل (SDA=9، SCL=10، 3.3V، GND).";
+  badge("#g1b", S.V.G1);
+  const flags = [];
+  if (g.frz) flags.push(["fail", "القراءات متجمّدة: نفس البايتات عم تتكرر. الشريحة علقانة أو مو عم تقيس."]);
+  if (g.zero) flags.push(["fail", "كل المحاور صفر: الشريحة نايمة أو تالفة."]);
+  if (g.ff) flags.push(["fail", "كل المحاور 0xFFFF: خط SDA عايم."]);
+  if (g.ok && !g.cfg) flags.push(["warn", "كتبنا GYRO_CONFIG وما رجع نفس القيمة."]);
+  if (g.ok && !g.bias) flags.push(["warn", "ما في bias محفوظ: الـ yaw رح ينجرف. اعمل اختبار الثبات."]);
+  $("#g1flags").innerHTML = flags.map(([c, m]) => `<div class="${c}box">${m}</div>`).join("");
+  ["gx", "gy", "gz"].forEach((k, i) => $("#" + k).textContent = fmt(g.g[i], 3));
+  ["ax", "ay", "az"].forEach((k, i) => $("#" + k).textContent = fmt(g.a[i], 4));
+  $("#roll").textContent = fmt(g.roll, 1) + "°"; $("#pitch").textContent = fmt(g.pitch, 1) + "°";
+  $("#anorm").textContent = fmt(Math.hypot(...g.a), 4) + " g"; $("#tC").textContent = fmt(g.tC, 1) + " °C"; $("#gerr").textContent = g.err;
+  $("#yawTxt").textContent = fmt(g.yaw, 1) + "°";
+  $("#stillState").textContent = g.still ? "عم يقيس… لا تلمسه" : "";
+  spark($("#cvGz"), S.hist.gz, { minSpan: 2, color: "#e3a72f" });
+  spark($("#cvYaw"), S.hist.yaw, { minSpan: 10 });
+}
+function renderStill() {
+  const r = S.imuStill; if (!r) return;
+  const v = stillVerdict(r);
+  const ax = ["X", "Y", "Z"];
+  $("#stillRes").innerHTML = `<div class="${v.s === "ok" ? "ok" : v.s === "warn" ? "warn" : "fail"}box"><b>${v.s === "ok" ? "OK" : v.s === "warn" ? "مشبوه" : "فشل"}</b> — ${v.n}</div>
+   <table><tr><th></th>${ax.map(a => `<th class="n">${a}</th>`).join("")}</tr>
+   <tr><td>bias gyro °/s</td>${r.g_mean.map(x => `<td class="n">${fmt(x, 3)}</td>`).join("")}</tr>
+   <tr><td>std gyro °/s</td>${r.g_std.map(x => `<td class="n">${fmt(x, 3)}</td>`).join("")}</tr>
+   <tr><td>accel g</td>${r.a_mean.map(x => `<td class="n">${fmt(x, 4)}</td>`).join("")}</tr>
+   <tr><td>std accel g</td>${r.a_std.map(x => `<td class="n">${fmt(x, 4)}</td>`).join("")}</tr></table>
+   <div class="muted">${r.n} عيّنة خلال ${r.ms} ms. |a| = ${fmt(r.a_norm, 4)} g. الـ bias انحفظ والـ yaw صار صفر.</div>`;
+}
+$("#stillBtn").onclick = () => send("IMU STILL 3000");
+$("#imuInit").onclick = () => send("IMU INIT");
+$("#yawZero").onclick = () => send("IMU ZERO");
+$("#yawStart").onclick = () => { send("IMU ZERO"); S.yawTest = { t: performance.now() }; $("#yawRes").innerHTML = `<div class="muted">لف <b>لليسار</b> هلق ${$("#yawTarget").value}° وبعدين اضغط "خلصت".</div>`; };
+$("#yawDone").onclick = () => {
+  if (!S.tl) return;
+  const yaw = S.tl.g.yaw, target = +$("#yawTarget").value;
+  if (Math.abs(yaw) < 10) { $("#yawRes").innerHTML = `<div class="failbox">الـ yaw تغيّر ${fmt(yaw, 1)}° بس. هل لفّيت فعلاً؟ هل الـ IMU شغّال؟</div>`; return; }
+  const sign = yaw > 0 ? 1 : -1, err = (Math.abs(yaw) - target) / target * 100;
+  S.meas.IMU_YAW_SIGN = { v: sign, src: `bench: hand pivot LEFT ${target}°, raw yaw ${yaw.toFixed(1)}°`, at: today() }; saveMeas();
+  $("#yawRes").innerHTML = `<div class="${sign > 0 ? "ok" : "warn"}box">لفة يسار أعطت yaw خام <b class="n">${fmt(yaw, 1)}°</b> →
+    <b>IMU_YAW_SIGN = ${sign > 0 ? "1.0f" : "-1.0f"}</b> ${sign > 0 ? "(نفس Config.h الحالي)" : "(لازم تغيّرها بـ Config.h!)"}.<br>
+    الفرق عن ${target}°: <span class="n">${fmt(err, 1)}%</span> ${Math.abs(err) > 5 ? "— أكبر من 5%: يا اللفة ما كانت دقيقة، يا مقياس الجيرو بحاجة تصحيح." : "— ممتاز."}</div>`;
+};
+
+// ---------------- ToF ----------------
+function buildTofCards() {
+  const names = ["أمامي", "يسار", "يمين"];
+  $("#tofCards").innerHTML = [0, 1, 2].map(i => `
+   <div class="card"><h3><span class="id">T${i + 1}</span> ToF ${names[i]} <span class="n muted">${hex(S.hello ? S.hello.cfg.TOF_ADDR[i] : 0x30 + i)}</span> <span id="t${i}b" class="badge unk">?</span></h3>
+     <div class="row"><span class="big n" id="t${i}mm">—</span><span>mm</span></div>
+     <div class="kv"><span class="k">status</span><span id="t${i}st">—</span><span class="k">قوة الإشارة (MCPS)</span><span class="n" id="t${i}sig">—</span>
+       <span class="k">ambient (MCPS)</span><span class="n" id="t${i}amb">—</span><span class="k">عمر القراءة</span><span class="n" id="t${i}age">—</span>
+       <span class="k">قراءات/ث</span><span class="n" id="t${i}rate">—</span><span class="k">أخطاء I2C</span><span class="n" id="t${i}err">—</span></div>
+     <div class="hbar" style="margin-top:6px"><div id="t${i}sigbar" style="width:0"></div></div>
+     <canvas id="cvT${i}" width="600" height="70" style="margin-top:6px;height:70px"></canvas>
+     <div class="row">الوضع <select id="t${i}mode" style="width:auto"><option value="S">SHORT</option><option value="M">MEDIUM</option><option value="L">LONG</option></select>
+       budget <input type="number" id="t${i}bud" value="33" min="20" max="1000" style="width:70px"><button class="sm" data-tofcfg="${i}">تطبيق</button></div>
+     <h4>مساعد المحاذاة والـ offset</h4>
+     <div class="muted">حط حيط مسطّح (أبيض أفضل) قدام الحساس، وقيس المسافة الحقيقية بالمسطرة من وجه الحساس للحيط. Config.h بينصح بـ 100 mm.</div>
+     <div class="row">المسافة الحقيقية mm <input type="number" id="t${i}true" value="${S.tofTrue[i]}"><button class="pri sm" data-tofstat="${i}">قيس 2 ث</button></div>
+     <div id="t${i}statRes"></div>
+     <div class="row"><button class="sm" data-tilt="${i}">ابدأ مسح الميلان</button><button class="sm" data-tiltend="${i}">خلص المسح</button></div>
+     <div class="muted">للميلان: حط الحيط على <b>300–400 mm</b> (على 100 mm التغيّر أصغر من ضجيج الحساس)، والروبوت متعامد مع الحيط (حافته موازية لخط البلاط). اضغط "ابدأ" (بيصفّر الـ yaw)، لف الروبوت ببطء <b>±20–25°</b> يمين ويسار، واضغط "خلص". بيحتاج IMU شغّال.</div>
+     <div id="t${i}tiltRes"></div>
+   </div>`).join("");
+  $$("[data-tofstat]").forEach(b => b.onclick = () => {
+    const i = +b.dataset.tofstat; S.tofTrue[i] = +$("#t" + i + "true").value; store("tofTrue", S.tofTrue);
+    $("#t" + i + "statRes").innerHTML = `<div class="muted">عم يقيس 2 ثانية…</div>`; send(`TOF STAT ${i + 1} 2000`);
+  });
+  $$("[data-tofcfg]").forEach(b => b.onclick = () => { const i = +b.dataset.tofcfg; send(`TOF CFG ${i + 1} ${$("#t" + i + "mode").value} ${$("#t" + i + "bud").value}`); });
+  $$("[data-tilt]").forEach(b => b.onclick = () => {
+    const i = +b.dataset.tilt; send("IMU ZERO"); S.tiltRun = (S.tiltRun || []).filter(k => k.i !== i); S.tiltRun.push({ i, pts: [] });
+    $("#t" + i + "tiltRes").innerHTML = `<div class="muted">عم يسجّل… لف ببطء.</div>`;
+  });
+  $$("[data-tiltend]").forEach(b => b.onclick = () => tiltFinish(+b.dataset.tiltend));
+  [0, 1, 2].forEach(renderTofStatIdx);
+}
+function renderTof(t) {
+  t.tof.forEach((s, i) => {
+    if (!$("#t" + i + "mm")) return;
+    badge("#t" + i + "b", S.V["T" + (i + 1)]);
+    $("#t" + i + "mm").textContent = s.up ? s.mm : "—";
+    $("#t" + i + "st").textContent = s.up ? `${s.st} — ${TOF_ST[s.st] || "?"}` : TOF_FAIL[s.f];
+    $("#t" + i + "sig").textContent = fmt(s.sig, 2); $("#t" + i + "amb").textContent = fmt(s.amb, 2);
+    $("#t" + i + "age").textContent = s.age + " ms"; $("#t" + i + "err").textContent = s.err;
+    $("#t" + i + "sigbar").style.width = clamp(s.sig / 20 * 100, 0, 100) + "%";
+    const prev = S.tofPrev && S.tofPrev[i];
+    if (prev) $("#t" + i + "rate").textContent = fmt((s.n - prev.n) / ((t.t - prev.t) / 1000), 1);
+    spark($("#cvT" + i), S.hist.tof[i], { minSpan: 10, color: "#2fbf71" });
+  });
+  if (!S.tofPrevAt || t.t - S.tofPrevAt > 1000) { S.tofPrev = t.tof.map(s => ({ n: s.n, t: t.t })); S.tofPrevAt = t.t; }
+}
+function renderTofStat(id) { renderTofStatIdx(id - 1); }
+function renderTofStatIdx(i) {
+  const r = S.tofStat[i + 1], box = $("#t" + i + "statRes"); if (!r || !box) return;
+  const truth = S.tofTrue[i], err = r.mean - truth, off = Math.round(truth - r.mean);
+  const C = S.hello ? S.hello.cfg : null;
+  const okN = r.n >= 10;
+  if (okN) { S.meas["TOF_OFFSET_" + i] = { v: off, src: `bench: flat wall at ${truth} mm, mean ${r.mean.toFixed(1)} (n=${r.n})`, at: today() }; saveMeas(); }
+  box.innerHTML = `<table><tr><th>متوسط</th><th>أدنى</th><th>أعلى</th><th>std</th><th>عيّنات</th></tr>
+    <tr><td class="n">${fmt(r.mean, 1)}</td><td class="n">${r.min}</td><td class="n">${r.max}</td><td class="n">${fmt(r.std, 1)}</td><td class="n">${r.n} (+${r.bad} غلط)</td></tr></table>
+    <div class="${Math.abs(err) <= 5 ? "ok" : Math.abs(err) <= 15 ? "warn" : "fail"}box">الخطأ = <b class="n">${err >= 0 ? "+" : ""}${fmt(err, 1)} mm</b>.
+    ${okN ? `OFFSET_MM المقترح لـ T${i + 1} = <b class="n">${off}</b> (الحالي ${C ? C.TOF_OFFSET_MM[i] : "?"}).` : "عيّنات قليلة: ما في حيط واضح؟"}
+    ${r.std > 5 ? "<br>الـ std عالي: الحيط مو ثابت/لامع أو الإضاءة قوية." : ""}
+    ${truth < (C ? C.TOF_MIN_RELIABLE_MM : 40) ? "<br>المسافة أقل من الحد الموثوق (40 mm)." : ""}</div>`;
+}
+function tiltFinish(i) {
+  const run = (S.tiltRun || []).find(k => k.i === i); const box = $("#t" + i + "tiltRes");
+  S.tiltRun = (S.tiltRun || []).filter(k => k.i !== i);
+  if (!run) return;
+  const pts = run.pts.filter(p => p[2] === 0 || p[2] === 3);
+  if (pts.length < 15) { box.innerHTML = `<div class="failbox">نقاط قليلة (${pts.length}). لف أبطأ أو طوّل المسح.</div>`; return; }
+  const xs = pts.map(p => p[0]), span = Math.max(...xs) - Math.min(...xs);
+  const minP = pts.reduce((a, b) => b[1] < a[1] ? b : a);
+  // least squares y = a x^2 + b x + c
+  let s = [0, 0, 0, 0, 0], sy = [0, 0, 0];
+  for (const [x, y] of pts) { let xp = 1; for (let k = 0; k < 5; k++) { s[k] += xp; if (k < 3) sy[k] += xp * y; xp *= x; } }
+  const M = [[s[4], s[3], s[2]], [s[3], s[2], s[1]], [s[2], s[1], s[0]]], Y = [sy[2], sy[1], sy[0]];
+  const det = (m) => m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+  const D = det(M), rep = (c) => M.map((r, ri) => r.map((v, ci) => ci === c ? Y[ri] : v));
+  const a = det(rep(0)) / D, b = det(rep(1)) / D;
+  const sign = S.meas.IMU_YAW_SIGN ? S.meas.IMU_YAW_SIGN.v : (S.hello ? S.hello.cfg.IMU_YAW_SIGN : 1);
+  let html = `<div class="muted">${pts.length} نقطة، مدى اللف ${fmt(span, 0)}°. أدنى قراءة ${minP[1]} mm عند yaw ${fmt(minP[0], 1)}°.</div>`;
+  if (span < 30) html += `<div class="warnbox">مدى اللف ${fmt(span, 0)}° بس: للدقة لف ±20° على الأقل.</div>`;
+  if (minP[1] < 200) html += `<div class="warnbox">الحيط قريب (${minP[1]} mm): بعّده لـ 300–400 mm، وإلا التغيّر بيضيع بالضجيج.</div>`;
+  if (a > 0 && isFinite(a)) {
+    // Shortest range = sensor axis perpendicular to the wall. If the CHASSIS had
+    // to turn left by x0 to get there, the sensor itself points x0 to the RIGHT.
+    const x0 = -b / (2 * a), robotLeft = x0 * sign > 0;
+    html += `<div class="${Math.abs(x0) <= 2 ? "ok" : "warn"}box">أقصر مسافة (يعني الحساس متعامد) لما الروبوت لافف <b class="n">${fmt(Math.abs(x0), 1)}°</b> ${robotLeft ? "لليسار" : "لليمين"} من وضع البداية.
+      ${Math.abs(x0) <= 2 ? "الحساس متعامد تقريباً ✓" : `يعني الحساس نفسه مايل حوالي <b>${fmt(Math.abs(x0), 1)}°</b> لجهة <b>${robotLeft ? "اليمين" : "اليسار"}</b> (إذا البداية كانت متعامدة فعلاً).`}</div>`;
+  } else html += `<div class="warnbox">ما قدرت لاقي قاع واضح. تأكد إنك لفّيت للجهتين.</div>`;
+  box.innerHTML = html;
+}
+
+// ---------------- LINE ----------------
+function buildLineBars() {
+  $("#lineBars").innerHTML = [...Array(8)].map((_, i) => `<div class="bar"><div class="n lab" id="lv${i}">0</div>
+    <div class="col"><div class="fill" id="lf${i}"></div><div class="mark" id="lw${i}" style="background:var(--ok)"></div><div class="mark" id="lk${i}" style="background:var(--fail)"></div></div>
+    <div class="lab"><span class="id">L${i}</span></div><div class="lab muted">${i < 6 ? "أمامي" : "خلفي"}</div></div>`).join("");
+}
+function lineCal() {
+  const L = S.line;
+  let a = null, b = null;
+  if (L.white && L.black) { a = L.white; b = L.black; }
+  else if (L.min && L.max) { a = L.min; b = L.max; }
+  else return null;
+  const lo = a.map((v, i) => Math.min(v, b[i])), hi = a.map((v, i) => Math.max(v, b[i]));
+  const inv = (L.white && L.black) ? L.white.map((w, i) => L.black[i] < w) : null;
+  return { lo, hi, inv };
+}
+function linePosition(raw, cal, thr, invert, minSpread) {   // port of LineArray::read()
+  let ws = 0, ts = 0, active = 0, usable = true, mask = 0; const norm = [];
+  for (let i = 0; i < 8; i++) {
+    const lo = cal.lo[i], hi = cal.hi[i];
+    if (hi <= lo || hi - lo < minSpread) { if (i < 6) usable = false; norm[i] = 0; continue; }
+    let s = Math.trunc((raw[i] - lo) * 1000 / (hi - lo)); s = clamp(s, 0, 1000); if (invert) s = 1000 - s; norm[i] = s;
+    if (s >= thr) { mask |= 1 << i; if (i < 6) active++; }
+    if (i < 6) { ws += s * i * 1000; ts += s; }
+  }
+  if (active === 0 || ts === 0) return { lost: true, usable, mask, active, norm };
+  const c = ws / ts;
+  return { lost: false, pos: clamp((c - 2500) / 2500, -1, 1), usable, mask, active, norm };
+}
+function renderLine(t) {
+  const L = S.line, C = S.hello ? S.hello.cfg : { LINE_ON_THRESHOLD: 600, INVERT_POLARITY: 0, MIN_USABLE_SPREAD: 300 };
+  for (let i = 0; i < 8; i++) {
+    $("#lv" + i).textContent = t.l[i];
+    $("#lf" + i).style.height = (t.l[i] / 4095 * 100) + "%";
+    $("#lw" + i).style.bottom = L.white ? (L.white[i] / 4095 * 100) + "%" : "-10px";
+    $("#lk" + i).style.bottom = L.black ? (L.black[i] / 4095 * 100) + "%" : "-10px";
+    const v = S.V["L" + i]; $("#lf" + i).style.background = v && v.s === "fail" ? "var(--fail)" : v && v.s === "warn" ? "var(--warn)" : "var(--acc)";
+  }
+  const cal = lineCal();
+  const anyFail = [...Array(8)].some((_, i) => S.V["L" + i] && S.V["L" + i].s === "fail");
+  badge("#lineBadge", cal ? { s: anyFail ? "fail" : "ok", n: "" } : null);
+  let rows = `<tr><th></th>${[...Array(8)].map((_, i) => `<th class="n">L${i}</th>`).join("")}</tr>`;
+  const r = (name, arr) => `<tr><td>${name}</td>${[...Array(8)].map((_, i) => `<td class="n">${arr ? arr[i] : "—"}</td>`).join("")}</tr>`;
+  rows += r("أبيض", L.white) + r("أسود", L.black);
+  if (L.min) rows += r("min مسح", L.min) + r("max مسح", L.max);
+  if (cal) rows += `<tr><td>الفرق</td>${cal.hi.map((h, i) => { const sp = h - cal.lo[i]; return `<td class="n" style="color:${sp < C.MIN_USABLE_SPREAD ? "var(--fail)" : "var(--ok)"}">${sp}</td>`; }).join("")}</tr>`;
+  $("#lineTbl").innerHTML = rows;
+  // polarity
+  if (cal && cal.inv) {
+    const nInv = cal.inv.slice(0, 6).filter(Boolean).length;
+    $("#linePol").innerHTML = nInv === 0 ? `<div class="okbox">القطبية صح: الأسود أعلى من الأبيض (INVERT_POLARITY = false بـ LineArray.cpp مناسب).</div>`
+      : nInv === 6 ? `<div class="failbox">كل الصف الأمامي مقلوب: الأسود أوطى من الأبيض. لازم <b>INVERT_POLARITY = true</b> بـ src/LineArray.cpp (مو بـ Config.h).</div>`
+      : `<div class="warnbox">${nInv} حساسات مقلوبة من 6: غالباً توصيل غلط أو حساس معطّل، مو قطبية.</div>`;
+    S.meas.INVERT_POLARITY = nInv === 6 ? { v: true, src: "bench: black < white on all 6 front", at: today() } : nInv === 0 ? { v: false, src: "bench", at: today() } : S.meas.INVERT_POLARITY;
+  } else $("#linePol").innerHTML = "";
+  if (cal) {
+    const p = linePosition(t.l, cal, C.LINE_ON_THRESHOLD, !!C.INVERT_POLARITY, C.MIN_USABLE_SPREAD);
+    if (!p.lost) S.posLast = p.pos;
+    $("#posDot").style.left = (50 + S.posLast * 50) + "%";
+    $("#posDot").style.background = p.lost ? "var(--fail)" : "var(--warn)";
+    $("#posTxt").textContent = p.lost ? `ضايع (آخر ${fmt(S.posLast, 2)})` : fmt(p.pos, 3);
+    $("#posInfo").textContent = `حساسات فوق الخط: ${p.active}/6 · ${p.usable ? "كل الأمامي صالح" : "في حساس أمامي غير صالح: الـ firmware رح يرفض المعايرة"} · mask ${p.mask.toString(2).padStart(8, "0")}`;
+  } else { $("#posTxt").textContent = "—"; $("#posInfo").textContent = "التقط أبيض وأسود أولاً (أو اعمل مسح)."; }
+}
+function lineCapture(kind) {
+  if (!S.tl) return toast("ما في تليمتري");
+  S.capturing = { kind, acc: [] };
+  toast("عم يلتقط " + (kind === "white" ? "الأبيض" : "الأسود") + " ثانية وحدة…");
+  setTimeout(() => {
+    const acc = S.capturing.acc; S.capturing = null;
+    if (!acc.length) return toast("ما وصل شي");
+    S.line[kind] = [...Array(8)].map((_, i) => Math.round(acc.reduce((a, r) => a + r[i], 0) / acc.length));
+    store("line", S.line); render();
+  }, 1000);
+}
+$("#capWhite").onclick = () => lineCapture("white");
+$("#capBlack").onclick = () => lineCapture("black");
+$("#sweepBtn").onclick = () => { S.sweep = !S.sweep; if (S.sweep) { S.line.min = null; S.line.max = null; } $("#sweepBtn").textContent = "مسح min/max: " + (S.sweep ? "شغّال (حرّك الحساسات فوق الخط)" : "إيقاف"); store("line", S.line); };
+$("#lineClear").onclick = () => { S.line = { white: null, black: null, min: null, max: null }; store("line", S.line); render(); };
+
+// ---------------- MOTORS ----------------
+function applyCap(pwm) { for (const id of ["#mL", "#mR"]) { const s = $(id); s.min = -pwm; s.max = pwm; if (Math.abs(+s.value) > pwm) s.value = 0; } }
+function renderMot(t) {
+  badge("#m1b", S.V.M1); badge("#m2b", S.V.M2); badge("#e1b", S.V.E1); badge("#e2b", S.V.E2);
+  $("#mRaw").textContent = `L ${t.m.raw[0]} / R ${t.m.raw[1]}`; $("#mStby").textContent = t.m.stby ? "HIGH (شغّال)" : "LOW (طافي)";
+  $("#mSeq").textContent = t.m.seq;
+  $("#eL").textContent = t.e.fw[0]; $("#eR").textContent = t.e.fw[1]; $("#eLr").textContent = t.e.raw[0]; $("#eRr").textContent = t.e.raw[1];
+  const mpc = S.hello ? S.hello.cfg.MM_PER_COUNT : 0.1418;
+  $("#eLmm").textContent = fmt(t.e.fw[0] * mpc, 1); $("#eRmm").textContent = fmt(t.e.fw[1] * mpc, 1);
+  $("#eLb").textContent = t.e.bad[0]; $("#eRb").textContent = t.e.bad[1];
+  $("#capTxt").textContent = t.m.pct + "%";
+}
+const mSlider = (self, other) => () => {
+  if ($("#mLink").checked) $(other).value = $(self).value;
+  $("#mlv").textContent = $("#mL").value; $("#mrv").textContent = $("#mR").value;
+  if (+$("#mL").value === 0 && +$("#mR").value === 0 && S.link) S.link.send("M 0 0");   // clean stop, no deadman
+};
+$("#mL").oninput = mSlider("#mL", "#mR"); $("#mR").oninput = mSlider("#mR", "#mL");
+$("#mZero").onclick = () => { $("#mL").value = 0; $("#mR").value = 0; $("#mlv").textContent = 0; $("#mrv").textContent = 0; send("M 0 0"); };
+$("#encReset").onclick = () => send("ENC RESET");
+$("#dirL").onclick = () => { $("#dirRes").innerHTML = `<div class="muted">نبضة يسار… راقب الدولابين اليسار.</div>`; send("DIR L " + $("#dirPwm").value); };
+$("#dirR").onclick = () => { $("#dirRes").innerHTML = `<div class="muted">نبضة يمين… راقب الدولابين اليمين.</div>`; send("DIR R " + $("#dirPwm").value); };
+
+async function onDir(o) {
+  const side = o.side, si = side === "L" ? 0 : 1, oi = 1 - si, thr = S.hello ? S.hello.cfg.db_counts : 10;
+  const name = side === "L" ? "اليسار" : "اليمين";
+  const ans = await ask(`<h3>شو شفت بالدولابين ${name}؟</h3><p class="muted">بعتنا "لقدام" حسب الـ firmware. encoder: ${name} ${o.d_fw[si]}، الجهة التانية ${o.d_fw[oi]} (عدّ fw).</p>`,
+    [["لفّوا لقدام", "fwd", "pri"], ["لفّوا لورا", "back"], ["واحد لقدام وواحد لورا", "mixed"], ["لفّ دولاب الجهة التانية", "other"], ["ما تحرّك شي", "none"]]);
+  const dS = o.d_fw[si], dO = o.d_fw[oi], mid = "M" + (si + 1), msgs = [];
+  let motor, enc;
+  if (ans === "fwd") motor = { s: "ok", n: "الاتجاه صح" };
+  else if (ans === "back") { motor = { s: "fail", n: "الاتجاه مقلوب" }; msgs.push(`الموتور ${name} مقلوب: بدّل سلكي الموتورين بهالجهة على الـ TB6612، أو اقلب قيمة inverted لـ _${side === "L" ? "left" : "right"} بـ src/RobotDrivetrain.cpp (الحالي ${o.inv_mot[si] ? "true" : "false"}).`); }
+  else if (ans === "mixed") { motor = { s: "fail", n: "موتور واحد مقلوب" }; msgs.push(`موتور واحد من الاتنين بهالجهة موصول بالعكس على الدرايفر التاني. بدّل سلكيه هو بس (التصليح بالأسلاك، مو بالكود، لأن الجهة مربوطة بإشارة وحدة).`); }
+  else if (ans === "other") { motor = { s: "fail", n: "يمين/يسار مبدّلين" }; msgs.push(`الموتورات مبدّلة يمين/يسار: أسلاك PWM/IN على الدرايفرين أو الموتورات نفسها. صلّح الأسلاك.`); }
+  else { motor = { s: "fail", n: "ما تحرّك" }; msgs.push(`ما تحرّك: افحص بطارية الموتورات، STBY (GPIO17)، وأسلاك PWM. جرّب PWM أعلى (deadband؟).`); }
+  // encoder
+  const moved = ans === "fwd" || ans === "back" || ans === "mixed";
+  if (moved && Math.abs(dS) >= thr) {
+    const expectPositive = ans !== "back";
+    if ((dS > 0) === expectPositive) enc = { s: "ok", n: `عدّ ${dS} بالاتجاه الصح` };
+    else { enc = { s: "fail", n: "إشارة العد مقلوبة" }; msgs.push(`encoder ${name} بيعدّ بالعكس: اقلب inverted لـ _enc${side === "L" ? "Left" : "Right"} بـ src/RobotDrivetrain.cpp (الحالي ${o.inv_enc[si] ? "true" : "false"})، أو بدّل سلكي A/B.`); }
+  } else if (moved && Math.abs(dO) >= thr) { enc = { s: "fail", n: "الـ encoders مبدّلين" }; msgs.push(`الدولاب ${name} لفّ بس encoder الجهة التانية هو اللي عدّ: الـ encoders مبدّلين يمين/يسار (دبابيس 18/21 مع 38/39).`); }
+  else if (moved) { enc = { s: "fail", n: "ما عدّ" }; msgs.push(`encoder ${name} ما عدّ (${dS}): افحص تغذيته (3.3V/5V) وسلكي A/B (GPIO ${si ? "38/39" : "18/21"}).`); }
+  else if (ans === "other" && Math.abs(dO) >= thr) enc = { s: "unk", n: "أعد الاختبار بعد تصليح الموتورات" };
+  else enc = { s: "unk", n: "الموتور ما تحرّك" };
+  S.dirRes[side] = { motor, enc, at: today() }; store("dirRes", S.dirRes);
+  $("#dirRes").innerHTML = `<div class="${motor.s === "ok" && enc.s === "ok" ? "ok" : "fail"}box"><b>${mid}:</b> ${motor.n}. <b>E${si + 1}:</b> ${enc.n}.
+    ${msgs.length ? "<ul>" + msgs.map(m => `<li>${m}</li>`).join("") + "</ul>" : ""}</div>`;
+  render();
+}
+function onDb(o) {
+  const r = { mode: o.mode, dir: o.dir, move: o.move, result: o.result, surf: $("#dbSurf").value, at: today(), cap: o.cap };
+  S.dbRes.unshift(r); S.dbRes = S.dbRes.slice(0, 12); store("dbRes", S.dbRes);
+  if (o.result === "cap") toast("وصل لسقف الـ PWM وما تحرّك. ارفع السقف أو افحص الموتور.");
+  renderDb();
+}
+function renderDb() {
+  const nm = { L: "يسار", R: "يمين", P: "pivot" };
+  $("#dbTbl").innerHTML = `<tr><th>الوضع</th><th>السطح</th><th>يسار</th><th>يمين</th><th></th></tr>` + S.dbRes.map(r =>
+    `<tr><td>${nm[r.mode]} ${r.dir > 0 ? "قدام" : "ورا"}</td><td>${r.surf === "ground" ? "أرض" : "هوا"}</td>
+     <td class="n">${r.move[0] >= 0 ? r.move[0] : (r.mode === "R" ? "" : "✗")}</td><td class="n">${r.move[1] >= 0 ? r.move[1] : (r.mode === "L" ? "" : "✗")}</td><td class="muted">${r.result === "cap" ? "سقف" : ""}</td></tr>`).join("");
+  const ground = S.dbRes.filter(r => r.surf === "ground" && r.result === "moved");
+  const pivotG = ground.filter(r => r.mode === "P");
+  const all = (rs) => rs.flatMap(r => r.move.filter(v => v >= 0));
+  const C = S.hello ? S.hello.cfg : { PWM_MIN_MOVE: 220, SPEED_APPROACH: 260 };
+  let html = "";
+  if (pivotG.length) {
+    const mx = Math.max(...all(pivotG)), sug = Math.ceil(mx / 10) * 10;
+    S.meas.PWM_MIN_MOVE = { v: sug, src: `bench: ground pivot breakaway max ${mx} (step 8), rounded up`, at: today() }; saveMeas();
+    html = `<div class="okbox">عالأرض بوضع pivot: أعلى قيمة بدأ فيها الدوران <b class="n">${mx}</b> → PWM_MIN_MOVE المقترح <b class="n">${sug}</b> (الحالي ${C.PWM_MIN_MOVE}).
+      ${sug >= C.SPEED_APPROACH ? `<br><b style="color:var(--fail)">انتبه:</b> لازم PWM_MIN_MOVE &lt; SPEED_APPROACH (${C.SPEED_APPROACH}). الـ static_assert بـ Config.h رح يوقف البناء. لازم ترفع SPEED_APPROACH كمان.` : ""}</div>`;
+  } else if (S.dbRes.length) html = `<div class="warnbox">في قياسات ${ground.length ? "عالأرض" : "بالهوا"} بس ما في pivot عالأرض لسا. قيمة PWM_MIN_MOVE النهائية من pivot عالبلاطة (المرحلة د).</div>`;
+  $("#dbSug").innerHTML = html;
+}
+["L", "R", "P"].forEach(m => $("#db" + m).onclick = () => {
+  if (m === "P" && $("#dbSurf").value === "ground") { /* fine */ }
+  send(`DB ${m} ${$("#dbDir").value}`);
+});
+$("#cprCalc").onclick = () => {
+  if (!S.tl) return; const side = +$("#cprSide").value, n = +$("#cprTurns").value, c = Math.abs(S.tl.e.raw[side]);
+  if (c < 50 || n <= 0) { $("#cprRes").innerHTML = `<div class="failbox">العدّ ${c} قليل. صفّرت ولفّيت؟</div>`; return; }
+  const cpr = c / n; S.meas.ENCODER_CPR = { v: +cpr.toFixed(1), src: `bench: ${n} hand turns, ${c} counts, side ${side ? "R" : "L"}`, at: today() }; saveMeas();
+  $("#cprRes").innerHTML = `<div class="okbox">ENCODER_CPR ≈ <b class="n">${fmt(cpr, 1)}</b> (الحالي ${S.hello ? S.hello.cfg.ENCODER_CPR : "?"}). كرّر عالجهة التانية للتأكيد.</div>`;
+};
+$("#distStart").onclick = () => { if (!S.tl) return; S.dist0 = [...S.tl.e.fw]; $("#distRes").innerHTML = `<div class="muted">ادفش هلق…</div>`; };
+$("#distEnd").onclick = () => {
+  if (!S.tl || !S.dist0) return; const d = [S.tl.e.fw[0] - S.dist0[0], S.tl.e.fw[1] - S.dist0[1]], D = +$("#distMm").value;
+  const avg = (Math.abs(d[0]) + Math.abs(d[1])) / 2;
+  if (avg < 100) { $("#distRes").innerHTML = `<div class="failbox">عدّ قليل (${d.join(" / ")}).</div>`; return; }
+  const cpr = S.meas.ENCODER_CPR ? S.meas.ENCODER_CPR.v : (S.hello ? S.hello.cfg.ENCODER_CPR : 1440);
+  const mmpc = D / avg, dia = mmpc * cpr / Math.PI;
+  S.meas.WHEEL_DIAMETER_MM = { v: +dia.toFixed(2), src: `bench: pushed ${D} mm, counts L ${d[0]} R ${d[1]}, CPR ${cpr}`, at: today() }; saveMeas();
+  const diff = Math.abs(Math.abs(d[0]) - Math.abs(d[1])) / avg * 100;
+  $("#distRes").innerHTML = `<div class="okbox">mm/عدّ = <span class="n">${fmt(mmpc, 4)}</span> → WHEEL_DIAMETER_MM الفعّال ≈ <b class="n">${fmt(dia, 2)}</b> (CPR ${cpr}).
+    ${d[0] < 0 || d[1] < 0 ? "<br><b>انتبه:</b> عدّ سالب وانت دفشت لقدام: إشارة encoder مقلوبة." : ""}
+    ${diff > 3 ? `<br>فرق بين الجهتين ${fmt(diff, 1)}%: يا ما مشيت دغري، يا الدواليب مو نفس القطر.` : ""}</div>`;
+};
+$("#twStart").onclick = () => { if (!S.tl) return; S.tw0 = { e: [...S.tl.e.fw], yaw: S.tl.g.yaw }; $("#twRes").innerHTML = `<div class="muted">لف مكانك هلق…</div>`; };
+$("#twEnd").onclick = () => {
+  if (!S.tl || !S.tw0) return; const dL = S.tl.e.fw[0] - S.tw0.e[0], dR = S.tl.e.fw[1] - S.tw0.e[1], dy = S.tl.g.yaw - S.tw0.yaw;
+  if (Math.abs(dy) < 90) { $("#twRes").innerHTML = `<div class="failbox">الـ yaw تغيّر ${fmt(dy, 0)}° بس. لف لفة كاملة على الأقل.</div>`; return; }
+  const cpr = S.meas.ENCODER_CPR ? S.meas.ENCODER_CPR.v : S.hello.cfg.ENCODER_CPR, dia = S.meas.WHEEL_DIAMETER_MM ? S.meas.WHEEL_DIAMETER_MM.v : S.hello.cfg.WHEEL_DIAMETER_MM;
+  const mmpc = Math.PI * dia / cpr, arc = (Math.abs(dL) + Math.abs(dR)) / 2 * mmpc, tw = 2 * arc / (Math.abs(dy) * Math.PI / 180);
+  S.meas.TRACK_WIDTH_MM = { v: +tw.toFixed(1), src: `bench: pivot ${dy.toFixed(0)} deg (IMU), counts L ${dL} R ${dR}`, at: today() }; saveMeas();
+  $("#twRes").innerHTML = `<div class="okbox">TRACK_WIDTH_MM الفعّال ≈ <b class="n">${fmt(tw, 1)}</b> (الحالي ${S.hello.cfg.TRACK_WIDTH_MM}). بالـ skid-steer هالرقم غالباً أكبر من المسافة بين الدواليب بالمسطرة بسبب الانزلاق، وهو الرقم المفيد للـ odometry.</div>`;
+};
+
+// ---------------- SERVOS ----------------
+const POSES = [["S1", 0, "ARM_ANGLE_DOWN", "ذراع تحت"], ["S1", 0, "ARM_ANGLE_CARRY", "ذراع فوق (حمل)"], ["S2", 1, "GRIPPER_OPEN", "قبضة مفتوحة"], ["S2", 1, "GRIPPER_CLOSED", "قبضة مسكّرة"]];
+function buildServoCards() {
+  const C = S.hello ? S.hello.cfg : null;
+  const nm = ["سيرفو الذراع (MG996R، قناة 0)", "سيرفو القبضة (MG90S، قناة 1)"];
+  const start = C ? [C.ARM_ANGLE_CARRY, C.GRIPPER_OPEN] : [75, 100];
+  $("#srvCards").innerHTML = [0, 1].map(i => `
+   <div class="card"><h3><span class="id">S${i + 1}</span> ${nm[i]} <span id="s${i}b" class="badge unk">?</span></h3>
+     <div class="row">تشغيل على زاوية <input type="number" id="s${i}start" value="${start[i]}"><button class="pri" data-sv-on="${i}">تشغيل</button><button data-sv-off="${i}">إطفاء (رخو)</button></div>
+     <div class="row"><span>الحالي <b class="n" id="s${i}cur">—</b>° → الهدف <b class="n" id="s${i}tgt">—</b>°</span><span class="muted n" id="s${i}tk"></span></div>
+     <input type="range" id="s${i}sl" min="0" max="180" value="${start[i]}">
+     <div class="row"><button class="sm" data-sv-d="${i},-5">−5</button><button class="sm" data-sv-d="${i},-1">−1</button>
+       <input type="number" id="s${i}ang" value="${start[i]}" style="width:70px"><button class="sm" data-sv-go="${i}">روح</button>
+       <button class="sm" data-sv-d="${i},1">+1</button><button class="sm" data-sv-d="${i},5">+5</button></div>
+     <div class="row muted">الحدود: <span class="n" id="s${i}lim">—</span> <label><input type="checkbox" id="s${i}unlock"> فك الحدود (0..180)</label></div>
+     <h4>مواضع مسمّاة</h4>
+     ${POSES.filter(p => p[1] === i).map(p => `<div class="row"><span style="min-width:130px">${p[3]}</span><span class="n">${p[2]}</span>
+       <b class="n" id="pose-${p[2]}">${S.poses[p[2]] ?? "—"}</b> <span class="muted">(Config: ${C ? C[p[2]] : "?"})</span>
+       <button class="sm" data-pose-save="${p[2]},${i}">احفظ الحالي</button><button class="sm" data-pose-go="${p[2]},${i}">روح</button></div>`).join("")}
+     <div class="row">تحرّك؟ <button class="sm" data-man="S${i + 1}" data-v="ok">إي ✓</button><button class="sm" data-man="S${i + 1}" data-v="fail">لا ✗</button></div>
+   </div>`).join("") + `<div class="card"><h3>السرعة (slew)</h3><div class="row"><input type="number" id="slew" value="${C ? C.slew_dps : 140}" min="10" max="360"> °/ث <button id="slewBtn">تطبيق</button></div>
+     <div class="muted">الـ firmware بيستخدم 140 °/ث. السرعة العالية بتسحب تيار كبير وممكن تعمل brown-out للـ PCA.</div></div>`;
+  const svTarget = (i, a) => { $("#s" + i + "sl").value = a; $("#s" + i + "ang").value = a; send(`SV ${i + 1} ${a}`); };
+  $$("[data-sv-on]").forEach(b => b.onclick = () => { const i = +b.dataset.svOn; const a = +$("#s" + i + "start").value; send(`SV ${i + 1} ON ${a}`); $("#s" + i + "sl").value = a; $("#s" + i + "ang").value = a; });
+  $$("[data-sv-off]").forEach(b => b.onclick = () => send(`SV ${+b.dataset.svOff + 1} OFF`));
+  $$("[data-sv-d]").forEach(b => b.onclick = () => { const [i, d] = b.dataset.svD.split(",").map(Number); svTarget(i, clamp(+$("#s" + i + "ang").value + d, 0, 180)); });
+  $$("[data-sv-go]").forEach(b => b.onclick = () => { const i = +b.dataset.svGo; svTarget(i, +$("#s" + i + "ang").value); });
+  [0, 1].forEach(i => {
+    $("#s" + i + "sl").oninput = () => { $("#s" + i + "ang").value = $("#s" + i + "sl").value; send(`SV ${i + 1} ${$("#s" + i + "sl").value}`); };
+    $("#s" + i + "unlock").onchange = async (e) => {
+      if (!S.hello) { e.target.checked = false; return toast("اتصل أولاً"); }
+      const C2 = S.hello.cfg;
+      if (e.target.checked) {
+        const ok = await ask(`<p>فك الحدود بيسمح للسيرفو يروح من 0 لـ 180. إذا الذراع أو القبضة بيخبطوا بالشاسيه ممكن ينحرق السيرفو أو ينكسر شي.</p><p>متأكد؟</p>`, [["إي، فك الحدود", 1, "pri"], ["لا", 0]]);
+        if (ok) send(`SLIM ${i + 1} 0 ${C2.SERVO_MAX_ANGLE} YES`); else e.target.checked = false;
+      } else {
+        const lo = i ? Math.min(C2.GRIPPER_CLOSED, C2.GRIPPER_OPEN) : Math.min(C2.ARM_ANGLE_DOWN, C2.ARM_ANGLE_CARRY);
+        const hi = i ? Math.max(C2.GRIPPER_CLOSED, C2.GRIPPER_OPEN) : Math.max(C2.ARM_ANGLE_DOWN, C2.ARM_ANGLE_CARRY);
+        send(`SLIM ${i + 1} ${lo} ${hi}`);
+      }
+    };
+  });
+  $$("[data-pose-save]").forEach(b => b.onclick = () => {
+    const [name, i] = b.dataset.poseSave.split(","); const s = S.tl && S.tl.s[+i];
+    if (!s || !s.en) return toast("شغّل السيرفو أولاً");
+    S.poses[name] = s.tgt; store("poses", S.poses); $("#pose-" + name).textContent = s.tgt;
+    S.meas[name] = { v: s.tgt, src: "bench: saved servo pose", at: today() }; saveMeas();
+  });
+  $$("[data-pose-go]").forEach(b => b.onclick = () => { const [name, i] = b.dataset.poseGo.split(","); const v = S.poses[name] ?? (S.hello ? S.hello.cfg[name] : null); if (v !== null && v !== undefined) svTarget(+i, v); });
+  $("#slewBtn").onclick = () => send("SLEW " + $("#slew").value);
+  bindManual();
+}
+function applyCfgLimits() { if (S.hello) { applyCap(Math.floor(S.hello.cfg.PWM_MAX * S.hello.cfg.cap_default_pct / 100)); $("#pcaOsc").value = S.hello.cfg.PCA_OSC_HZ; } }
+function renderSrv(t) {
+  t.s.forEach((s, i) => {
+    if (!$("#s" + i + "cur")) return;
+    badge("#s" + i + "b", S.V["S" + (i + 1)]);
+    $("#s" + i + "cur").textContent = s.en ? fmt(s.cur, 1) : "رخو"; $("#s" + i + "tgt").textContent = s.tgt;
+    $("#s" + i + "tk").textContent = s.en ? `ticks ${s.tk} ≈ ${fmt(s.tk * 20000 / 4096, 0)} µs` : "";
+    $("#s" + i + "lim").textContent = `${s.lo}..${s.hi}`;
+    const sl = $("#s" + i + "sl"); sl.min = s.lo; sl.max = s.hi;
+  });
+}
+$("#oscCalc").onclick = () => {
+  const i = +$("#oscSv").value, us = +$("#oscUs").value, t = S.tl;
+  if (!t || !t.s[i].en || !us) { $("#oscRes").innerHTML = `<div class="failbox">شغّل السيرفو واكتب النبضة المقاسة.</div>`; return; }
+  const ticks = t.s[i].tk, pre = t.p.pre, f = ticks * (pre + 1) / (us * 1e-6);
+  if (f < 20e6 || f > 30e6) {   // real PCA9685 parts run ~23-27 MHz
+    $("#oscRes").innerHTML = `<div class="failbox">النتيجة ${fmt(f / 1e6, 1)} MHz مستحيلة (الشرائح الحقيقية بين 23 و 27 MHz).
+      السيرفو هلق على ${ticks} ticks يعني النبضة لازم تكون قريبة من <b class="n">${fmt(ticks * 20000 / 4096, 0)} µs</b>. قست القناة الصح وعلى نفس الزاوية؟</div>`;
+    return;
+  }
+  S.meas.PCA_OSC_HZ = { v: Math.round(f), src: `bench: ${ticks} ticks, prescale ${pre}, measured ${us} us`, at: today() }; saveMeas();
+  $("#oscRes").innerHTML = `<div class="okbox">f_osc = ticks × (prescale+1) ÷ النبضة = ${ticks} × ${pre + 1} ÷ ${us} µs = <b class="n">${Math.round(f)}</b> Hz.
+    <br>جرّبها فوراً بـ "PCA OSC" بتبويب P1 وقيس من جديد: لازم تطلع النبضة ≈ ${fmt(ticks * 20000 / 4096, 0)} µs.
+    <br><b>ملاحظة:</b> المعادلة بتعليق Config.h (<span class="n">27e6 × measured/commanded</span>) مقلوبة. الصح <span class="n">27e6 × commanded/measured</span>، وهو نفس الرقم فوق.</div>`;
+};
+
+// ---------------- PCA / LED / BUZZER ----------------
+function renderPca(t) {
+  const p = t.p; badge("#p1b", S.V.P1); badge("#d1b", S.V.D1); badge("#b1b", S.V.B1);
+  const bits = (m) => [[7, "RESTART"], [5, "AI"], [4, "SLEEP"], [0, "ALLCALL"]].filter(([b]) => m & (1 << b)).map(([, n]) => n).join(" ") || "—";
+  $("#pcaKv").innerHTML = `<span class="k">ACK على 0x40</span><span>${p.ack ? "✓" : "✗"}</span>
+    <span class="k">شغّال</span><span>${p.up ? "✓" : "✗"}</span>
+    <span class="k">MODE1</span><span class="n">${hex(p.m1)} (${bits(p.m1)})</span>
+    <span class="k">PRESCALE</span><span class="n">${p.pre} (المتوقع ${p.exp})</span>
+    <span class="k">osc مستخدم</span><span class="n">${p.osc}</span>
+    <span class="k">مرات init</span><span class="n">${p.init}</span>
+    <span class="k">resets مكتشفة</span><span class="n" style="color:${p.rst ? "var(--warn)" : "inherit"}">${p.rst}</span>
+    <span class="k">كتابات فاشلة</span><span class="n">${p.wf}</span>`;
+  $("#ledSt").textContent = t.d1 ? "ضاوي" : "طافي";
+}
+$("#pcaStat").onclick = () => send("PCA STAT"); $("#pcaInit").onclick = () => send("PCA INIT");
+$("#pcaOscBtn").onclick = () => send("PCA OSC " + $("#pcaOsc").value);
+$("#ledOn").onclick = () => send("OUT D1 1"); $("#ledOff").onclick = () => send("OUT D1 0");
+$("#beepBtn").onclick = () => send("BEEP " + clamp(+$("#beepMs").value, 1, 3000)); $("#buzOff").onclick = () => send("OUT B1 0");
+function bindManual() {
+  $$("[data-man]").forEach(b => b.onclick = () => { S.man[b.dataset.man] = b.dataset.v; store("manual", S.man); render(); });
+}
+
+// ---------------- COLOUR ----------------
+function renderCol(t) {
+  badge("#c1b", S.V.C1); badge("#c2b", S.V.C2);
+  const head = (k, id) => { const v = t.c[k], c = v[3] || 1;
+    return `<tr><td><span class="id">${id}</span></td>${v.map(x => `<td class="n">${x}</td>`).join("")}<td class="n">${fmt(v[0] / c, 3)}</td><td class="n">${fmt(v[1] / c, 3)}</td><td class="n">${fmt(v[2] / c, 3)}</td></tr>`; };
+  $("#colTbl").innerHTML = `<tr><th></th><th>R</th><th>G</th><th>B</th><th>clear</th><th>r/c</th><th>g/c</th><th>b/c</th></tr>` + head("L", "C1") + head("R", "C2") +
+    `<tr><td colspan="8" class="muted">إطارات كاملة: ${t.c.f}</td></tr>`;
+}
+$$("[name=colSel]").forEach(r => r.onchange = () => send("COL " + r.value));
+
+// ---------------- BUTTON ----------------
+function renderBtn(t) {
+  badge("#btnb", S.V.BTN);
+  $("#btnSt").textContent = t.btn.p ? "مضغوط ⬇" : "مو مضغوط";
+  $("#btnSt").style.color = t.btn.p ? "var(--ok)" : "var(--muted)";
+  $("#btnN").textContent = t.btn.n;
+}
+
+// ---------------- CONFIG ----------------
+function saveMeas() { store("meas", S.meas); if (currentTab === "cfg") renderCfg(); }
+function renderCfg() {
+  const m = S.meas, C = S.hello ? S.hello.cfg : null;
+  const line = (type, name, v, unit = "") => {
+    const r = m[name]; const pad = (s, n) => s + " ".repeat(Math.max(1, n - s.length));
+    if (!r) return `// ${pad(name, 28)} لم يُقس بعد${C && C[name] !== undefined ? " (الحالي " + C[name] + ")" : ""}`;
+    const val = type === "float" ? (Number.isInteger(r.v) ? r.v.toFixed(1) : String(r.v)) + "f" : String(r.v) + (unit || "");
+    return `static constexpr ${pad(type, 9)}${pad(name, 28)}= ${val};   // ${r.src} (${r.at})`;
+  };
+  const rows = [];
+  rows.push(`// ===== SYROBIX bench results — ${today()} =====`);
+  rows.push(`// انسخ كل سطر مكان السطر اللي بنفس الاسم بـ src/Config.h.`, ``, `// --- namespace Hw ---`);
+  rows.push(line("float", "WHEEL_DIAMETER_MM", 0), line("float", "TRACK_WIDTH_MM", 0), line("float", "ENCODER_CPR", 0));
+  for (const k of ["LINE_ARRAY_TO_PIVOT_MM", "COLOR_HEADS_TO_CENTER_MM", "COLOR_HEADS_BEHIND_ARRAY_MM"]) rows.push(line("float", k, 0));
+  rows.push(line("float", "IMU_YAW_SIGN", 0));
+  rows.push(line("int16_t", "PWM_MIN_MOVE", 0));
+  if (m.PCA_OSC_HZ) rows.push(`static constexpr uint32_t PCA_OSC_HZ                  = ${m.PCA_OSC_HZ.v}UL;   // ${m.PCA_OSC_HZ.src} (${m.PCA_OSC_HZ.at})`);
+  else rows.push(`// PCA_OSC_HZ                   لم يُقس بعد (بده oscilloscope)`);
+  for (const k of ["ARM_ANGLE_DOWN", "ARM_ANGLE_CARRY", "GRIPPER_OPEN", "GRIPPER_CLOSED"]) rows.push(line("uint8_t", k, 0));
+  rows.push(``, `// --- namespace Tof ---`);
+  const offs = [0, 1, 2].map(i => m["TOF_OFFSET_" + i]);
+  if (offs.some(Boolean)) {
+    const cur = C ? C.TOF_OFFSET_MM : [0, 0, 0];
+    rows.push(`static constexpr int16_t  OFFSET_MM[3]        = { ${offs.map((o, i) => o ? o.v : cur[i]).join(", ")} };   // bench: ${offs.map((o, i) => "T" + (i + 1) + (o ? " measured" : " unchanged")).join(", ")}`);
+  } else rows.push(`// OFFSET_MM[3]                 لم يُقس بعد`);
+  rows.push(``, `// --- خارج Config.h ---`);
+  if (m.INVERT_POLARITY) rows.push(`// src/LineArray.cpp:  constexpr bool INVERT_POLARITY = ${m.INVERT_POLARITY.v};   // ${m.INVERT_POLARITY.src}`);
+  for (const k of ["L", "R"]) { const r = S.dirRes[k]; if (r) rows.push(`// ${k === "L" ? "M1/E1" : "M2/E2"}: ${r.motor.n} / ${r.enc.n}${r.motor.s !== "ok" || r.enc.s !== "ok" ? "  <-- شوف تبويب الموتورات" : ""}`); }
+  if (S.dbRes.length) rows.push(`// deadband: ${S.dbRes.map(r => `${r.mode}${r.dir > 0 ? "+" : "-"}@${r.surf}=[${r.move.join(",")}]`).join("  ")}`);
+  $("#cfgOut").value = rows.join("\n");
+}
+$("#cfgCopy").onclick = async () => { try { await navigator.clipboard.writeText($("#cfgOut").value); toast("انتسخ ✓"); } catch (e) { $("#cfgOut").select(); document.execCommand("copy"); toast("انتسخ"); } };
+$("#cfgClear").onclick = async () => {
+  if (await ask("<p>مسح كل القياسات المحفوظة (القيم، المواضع، المعايرة، نتائج الاختبارات)؟</p>", [["امسح", 1, "pri"], ["لا", 0]])) {
+    S.meas = {}; S.poses = {}; S.dirRes = {}; S.dbRes = []; S.man = {}; S.line = { white: null, black: null, min: null, max: null };
+    ["meas", "poses", "dirRes", "dbRes", "manual", "line"].forEach(k => store(k, k === "dbRes" ? [] : k === "line" ? S.line : {}));
+    buildServoCards(); renderDb(); renderCfg(); render();
+  }
+};
+$$("[data-ruler]").forEach(inp => {
+  const k = inp.dataset.ruler; if (S.meas[k]) inp.value = S.meas[k].v;
+  inp.onchange = () => { if (inp.value === "") delete S.meas[k]; else S.meas[k] = { v: +inp.value, src: "ruler", at: today() }; saveMeas(); };
+});
+
+// ---------------- LOG / CSV ----------------
+$("#recBtn").onclick = () => { S.rec.on = !S.rec.on; if (S.rec.on) S.rec.rows = []; $("#recBtn").textContent = S.rec.on ? "وقّف التسجيل" : "ابدأ التسجيل"; $("#recInfo").textContent = S.rec.rows.length + " سطر"; };
+$("#csvBtn").onclick = () => {
+  if (!S.rec.rows.length) return toast("ما في شي مسجّل");
+  const blob = new Blob([CSV_HEAD.join(",") + "\n" + S.rec.rows.join("\n")], { type: "text/csv" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `syrobix-bench-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}.csv`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+$("#rawSend").onclick = () => { const v = $("#rawCmd").value.trim(); if (v) { send(v); $("#rawCmd").value = ""; } };
+$("#rawCmd").onkeydown = (e) => { if (e.key === "Enter") $("#rawSend").click(); };
+
+// ---------------- header / misc ----------------
+$("#connBtn").onclick = connect;
+$("#scanBtn").onclick = () => send("I2C SCAN");
+$("#helloBtn").onclick = () => send("HELLO");
+$("#tofInit").onclick = () => send("TOF INIT");
+$("#capSel").onchange = async () => {
+  const v = +$("#capSel").value;
+  if (v > 40) {
+    const ok = await ask(`<h3>رفع سقف PWM لـ ${v}%</h3><p>الدواليب لازم تكون بالهوا أو الروبوت بمكان آمن. مع سقف عالي، أي غلطة بالمنزلق بتعطي سرعة كبيرة.</p>`, [["إي، ارفعه", 1, "pri"], ["لا", 0]]);
+    if (!ok) { $("#capSel").value = "40"; return; }
+    send(`CAP ${v} YES`);
+  } else send(`CAP ${v}`);
+};
+
+
+// ---------------- PRACTICE RUN (bench_wifi firmware, RUN mode) ----------------
+const STATE_AR = {
+  BOOT: "عم يقلع", BOOT_FAULT: "عطل بالإقلاع — شوف السبب تحت",
+  CALIBRATING: "معايرة: (1) امسح مصفوفة الخط فوق الخط 4 ثواني بإيدك، (2) حطه وما تلمسه (الجيرو)، (3) لكل لون بيبات بعدد ترتيبه: 1 أبيض، 2 أسود، 3 أخضر، 4 أحمر — حط الرأسين على اللون واضغط START.",
+  IDLE_ARMED: "جاهز. حطه على بلاطة البداية واضغط START.",
+  LINE_FOLLOW: "عم يتبع الخط", TURNING: "عم يلف عند تقاطع", OBSTACLE_AVOID: "عم يلتف حول عائق",
+  RAMP_TRANSIT: "على المنحدر", ZONE_ENTERED: "دخل منطقة المهمة", MINE_DEFUSE: "عم يفكّك لغم (5 ث + 3 وميض + بيب)",
+  VICTIM_SCAN: "عم يدوّر على الضحية", VICTIM_ALIGN: "عم يتوجّه للضحية", VICTIM_APPROACH: "عم يقرّب من الضحية",
+  VICTIM_GRIP: "عم يمسك الضحية", VICTIM_LIFT: "عم يرفع الضحية", EXIT_SEEK: "عم يدوّر على بلاطة الخروج",
+  EXIT_HOLD: "واقف 5 ث على الخروج", LACK_OF_PROGRESS: "عدم تقدم: حطه على آخر نقطة رجوع واضغط START",
+  FINISHED: "خلصت الجولة", FAULT: "عطل (FAULT)",
+};
+const COLOR_AR = ["؟", "أبيض", "أسود", "أخضر", "أحمر", "فضي"];
+S.mode = "bench"; S.runPrevName = null; S.runHist = [];
+
+function setMode(mode, hello) {
+  S.mode = mode;
+  const pill = $("#modePill");
+  pill.style.display = "";
+  pill.textContent = mode === "run" ? "🏁 تشغيل تجريبي" : "🔧 وضع الفحص";
+  pill.className = "pill " + (mode === "run" ? "warn" : "ok");
+  $("#runBench").style.display = mode === "run" ? "none" : "";
+  $("#runLive").style.display = mode === "run" ? "" : "none";
+  if (mode === "run") {
+    if (hello) { $("#rnLink").checked = !!hello.linkstop; $("#rnLinkMs").textContent = hello.linkstop_ms; }
+    showTab("run");
+  }
+}
+function renderRunBench() {
+  const fw = S.hello ? S.hello.fw : "";
+  const ok = /wifi|mock/.test(fw) && S.link;
+  $("#runGo").disabled = !ok;
+  $("#runGoNote").innerHTML = ok ? "" : (S.link ? "هالكبسة بتشتغل بس مع برنامج <b>bench_wifi</b>. البرنامج الحالي: <span class=\"n\">" + fw + "</span>" : "اتصل بالروبوت أولاً.");
+}
+function onRunStatus(r) {
+  if (S.mode !== "run") setMode("run");
+  const name = r.name || "?";
+  $("#rnName").textContent = name;
+  $("#rnDesc").textContent = STATE_AR[name] || "";
+  $("#rnIn").textContent = r.in !== undefined ? (r.in / 1000).toFixed(1) + " ث" : "—";
+  const m = r.match || 0;
+  $("#rnMatch").textContent = m ? `${Math.floor(m / 60000)}:${String(Math.floor(m / 1000) % 60).padStart(2, "0")} / 6:00` : "—";
+  $("#rnMatch").style.color = m > 330000 ? "var(--fail)" : "";
+  $("#rnPrev").textContent = r.prev || "—";
+  const warn = [];
+  if (r.fault) warn.push(`<div class="failbox">${r.fault}</div>`);
+  if (r.estop) warn.push(`<div class="failbox">emergencyStop: ${r.linkstopped ? "انقطع الواي فاي" : r.userstop ? "انضغط STOP" : "وقف طوارئ"}. اضغط "إعادة التجربة".</div>`);
+  $("#rnFault").innerHTML = warn.join("");
+  if (r.score !== undefined) {
+    $("#rnScore").textContent = r.score;
+    $("#rnZone").textContent = r.zone ? "إي" : "لا";
+    $("#rnMines").textContent = r.mines + " / 3";
+    $("#rnVic").textContent = r.deliv ? "انقذت ✓" : r.vic ? "محمولة" : "لا";
+    $("#rnAtt").textContent = r.att; $("#rnLop").textContent = r.lop;
+    $("#rnLine").textContent = r.snap ? (r.lost ? "ضايع" : r.line.toFixed(2)) + ` (${r.act}/6)` : "—";
+    $("#rnYaw").textContent = r.snap ? `${r.yaw.toFixed(1)}° / ${r.pitch.toFixed(1)}°` : "—";
+    $("#rnTof").textContent = r.snap ? `${r.fr} / ${r.lr} / ${r.rr} mm` : "—";
+    $("#rnCol").textContent = r.snap ? `${COLOR_AR[r.cl] || r.cl} / ${COLOR_AR[r.cr] || r.cr}` : "—";
+    $("#rnImu").textContent = r.snap ? `${r.imu ? "شغّال" : "معطّل"} / ${r.ramp ? "إي" : "لا"}` : "—";
+    $("#rnBtn").textContent = r.btn ? "مضغوط" : "—";
+  }
+  $("#rnStart").disabled = !!r.fault || !!r.estop;
+  if (name !== S.runPrevName) {
+    const t = (r.t / 1000).toFixed(1).padStart(7);
+    S.runHist.push(`${t}s  ${name}${r.score !== undefined ? "  score=" + r.score : ""}`);
+    if (S.runHist.length > 200) S.runHist.shift();
+    $("#rnHist").textContent = S.runHist.join("\n");
+    $("#rnHist").scrollTop = 1e9;
+    S.runPrevName = name;
+  }
+  S.lastTlAt = performance.now(); S.tlCount++;
+}
+$("#runGo").onclick = async () => {
+  const ok = await ask(`<h3>🏁 تشغيل تجريبي</h3><p>الروبوت رح يعيد التشغيل على كود المسابقة ويبلّش بالمعايرة. بعدها بيتحرك لوحده لما تضغط START.</p>
+    <ul><li>بطارية الموتورات والـ UBEC موصولين</li><li>الروبوت بملعب تجريبي، مو عالطاولة</li><li>STOP الأحمر أو Space بيوقفه بأي لحظة</li></ul>`, [["إي، ابدأ", 1, "pri"], ["لا", 0]]);
+  if (ok) { S.runHist = []; S.runPrevName = null; send("MODE RUN"); }
+};
+$("#rnStart").onclick = () => send("START");
+$("#rnAgain").onclick = async () => { if (await ask("<p>إعادة تشغيل الروبوت وبدء تجربة جديدة من المعايرة؟</p>", [["إي", 1, "pri"], ["لا", 0]])) { S.runHist = []; S.runPrevName = null; send("MODE RUN"); } };
+$("#rnBack").onclick = () => send("MODE BENCH");
+$("#rnLink").onchange = () => send("LINKSTOP " + ($("#rnLink").checked ? 1 : 0));
+
+// Wi-Fi host: if this page was served BY the robot, that is the address.
+(function initWifiHost() {
+  const h = location.hostname, servedByRobot = /^https?:$/.test(location.protocol) && h && h !== "localhost" && h !== "127.0.0.1";
+  let saved = null; try { saved = localStorage.getItem("syrobix-bench:host"); } catch (e) {}
+  $("#wifiHost").value = servedByRobot ? h : (saved || "192.168.4.1");
+  $("#wifiBtn").onclick = connectWifi;
+  if (servedByRobot && !new URLSearchParams(location.search).has("mock")) setTimeout(connectWifi, 300);
+})();
+
+// tabs
+let currentTab = "ov";
+function showTab(k) {
+  currentTab = k;
+  $$(".tab").forEach(t => t.classList.toggle("on", t.id === "tab-" + k));
+  $$("#nav button").forEach(b => b.classList.toggle("on", b.dataset.tab === k));
+  try { localStorage.setItem("syrobix-bench:tab", k); } catch (e) {}
+  render(); if (k === "cfg") renderCfg();
+}
+$("#nav").innerHTML = TABS.map(([k, n]) => `<button data-tab="${k}">${n}</button>`).join("");
+$$("#nav button").forEach(b => b.onclick = () => showTab(b.dataset.tab));
+
+// mock
+S.mock = new URLSearchParams(location.search).has("mock");
+if (S.mock) {
+  $("#mockPill").style.display = ""; $("#mockPanel").style.display = "block"; $("#connBtn").textContent = "Connect (mock)";
+  $("#mkRotL").onclick = () => { if (S.link && S.link.handRot !== undefined) S.link.handRot += 90; };
+  $("#mkRotR").onclick = () => { if (S.link && S.link.handRot !== undefined) S.link.handRot -= 90; };
+  $("#mkPush").onclick = () => { if (S.link) S.link.push = 1000; };
+  $("#mkBtn").onclick = () => { if (S.link && S.link.btn) { S.link.btn.p = 1; S.link.btn.n++; setTimeout(() => S.link && (S.link.btn.p = 0), 250); } };
+}
+
+buildLineBars(); renderStages(); buildServoCards(); buildTofCards(); renderDb(); renderTiles(); bindManual();
+// Chrome localises digits inside <input type=number> to the browser locale
+// (Arabic-Indic here). Plain text inputs with a numeric keypad keep Western
+// digits, so values read the same as Config.h. The device validates every value.
+const latinInputs = () => $$('input[type="number"]').forEach(i => { i.type = "text"; i.inputMode = "decimal"; i.classList.add("num"); });
+latinInputs(); new MutationObserver(latinInputs).observe(document.querySelector("main"), { childList: true, subtree: true });
+let startTab = "ov"; try { startTab = localStorage.getItem("syrobix-bench:tab") || "ov"; } catch (e) {}
+showTab(TABS.some(t => t[0] === startTab) ? startTab : "ov");
+</script>
+</body>
+</html>

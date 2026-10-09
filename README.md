@@ -56,6 +56,15 @@ Needs `g++` with C++17 (Linux, WSL or MSYS2):
 cd host_tests && sh run.sh
 ```
 
+## Hardware bench tools
+- [`bench/`](bench/README.md) — standalone hardware test firmware + single-file web UI (Web Serial).
+  Checks every part on its own (IMU, ToF, line array, colour, motors/encoders, servos, LED,
+  buzzer, PCA9685) and produces measured values ready to paste into `src/Config.h`.
+  Builds independently of the match firmware: `pio run -d bench`.
+- [`bench_wifi/`](bench_wifi/README.md) — the same tool and the **same UI** over Wi-Fi, plus a
+  **practice run** mode that boots the real match firmware with remote START / STOP and live
+  mission state. **Practice only:** the rulebook forbids wireless links during a scored round.
+
 ## Competition rules
 The official rulebook is published by the SYROBIX organisers and is **not** included in this
 repository; the mission constants in `src/Config.h` were derived from it.

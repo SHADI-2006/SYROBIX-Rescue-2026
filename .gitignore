@@ -12,3 +12,6 @@ host_tests/mission_sim/sim_th
 .vscode/settings.json
 docs/rules_extracted.txt
 docs/SYROBIX-Rescue-Competition-Rules.pdf
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+bench_wifi/src/index_html.h
